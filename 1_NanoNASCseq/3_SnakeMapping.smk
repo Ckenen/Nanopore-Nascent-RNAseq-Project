@@ -1,0 +1,162 @@
+#!/usr/bin/env runsnakemake
+include: "0_SnakeCommon.smk"
+indir = "results/demux/trimmed"
+outdir = "results/mapping"
+run_cells = run_cells[:2]
+
+rule all:
+    input:
+        expand(outdir + "/minimap2/{run_cell}.bam", run_cell=run_cells),
+        expand(outdir + "/minimap2/{run_cell}.flagstat", run_cell=run_cells),
+        # expand(outdir + "/filtered/{run_cell}.bam", run_cell=run_cells),
+        # expand(outdir + "/extract_umi/{run_cell}.bam", run_cell=run_cells),
+        # expand(outdir + "/stat_clip/{run_cell}.bam", run_cell=run_cells),
+        expand(outdir + "/mark_duplicate/{run_cell}.bam", run_cell=run_cells),
+        expand(outdir + "/mark_duplicate/{run_cell}.flagstat", run_cell=run_cells),
+        expand(outdir + "/remove_duplicate/{run_cell}.bam", run_cell=run_cells),
+        #outdir + "/report_summary.tsv",
+        expand(outdir + "/chrom_reads/{run_cell}.tsv", run_cell=run_cells),
+
+
+rule minimap2:
+    input:
+        fq = indir + "/{run}/{cell}.fastq.gz",
+        mmi = lambda wildcards: FILES[get_species(wildcards.cell)]["GENOME_SPLICE_MMI"],
+        bed = lambda wildcards: FILES[get_species(wildcards.cell)]["TRANSCRIPT_BED"]
+    output:
+        bam = outdir + "/minimap2/{run}/{cell}.bam"
+    log:
+        outdir + "/minimap2/{run}/{cell}.log"
+    params:
+        rg = '@RG\\tID:{cell}\\tLB:{cell}\\tSM:{cell}'
+    threads:
+        12
+    shell:
+        """(
+        minimap2 -ax splice -u f -Y --MD -R '{params.rg}' --junc-bed {input.bed} \
+            -t {threads} {input.mmi} {input.fq} \
+            | samtools view -@ {threads} -u - \
+            | samtools sort -@ {threads} -T {output.bam} -o {output.bam} - 
+        samtools index -@ {threads} {output.bam} ) &> {log}
+        """
+
+rule filter_bam:
+    input:
+        bam = rules.minimap2.output.bam
+    output:
+        bam = outdir + "/filtered/{run}/{cell}.bam"
+    log:
+        outdir + "/filtered/{run}/{cell}.log"
+    threads:
+        4
+    shell:
+        """(
+        samtools view -@ {threads} --expr 'rname =~ "^chr([0-9]+|[XY])$"' \
+            -q 30 -m 200 -F 2308 -o {output.bam} {input.bam}
+        samtools index -@ {threads} {output.bam} ) &> {log}
+        """
+
+rule extract_umi:
+    input:
+        bam = rules.filter_bam.output.bam
+    output:
+        bam = outdir + "/extract_umi/{run}/{cell}.bam"
+    log:
+        outdir + "/extract_umi/{run}/{cell}.log"
+    threads:
+        4
+    shell:
+        """(
+        ./scripts/mapping/extract_umi.py {input.bam} {output.bam}
+        samtools index -@ {threads} {output.bam} ) &> {log}
+        """
+
+rule stat_clip:
+    input:
+        bam = rules.extract_umi.output.bam
+    output:
+        bam = outdir + "/stat_clip/{run}/{cell}.bam",
+        tsv = outdir + "/stat_clip/{run}/{cell}.tsv"
+    log:
+        outdir + "/stat_clip/{run}/{cell}.log"
+    threads:
+        4
+    shell:
+        """(
+        nasctools StatClip -c 20 -s {output.tsv} -o {output.bam} {input.bam}
+        samtools index -@ {threads} {output.bam} ) &> {log}
+        """
+
+# Time-cost: 20221218_BlastocystC69.C33
+
+rule mark_duplicate: 
+    input:
+        bam = outdir + "/processed/{run}/{cell}.bam"
+    output:
+        bam = outdir + "/mark_duplicate/{run}/{cell}.bam",
+        tsv = outdir + "/mark_duplicate/{run}/{cell}.tsv"
+    log:
+        outdir + "/marked_duplicate/{run}/{cell}.log"
+    threads:
+        4
+    shell:
+        """(
+        ./scripts/mapping/mark_duplicate.py {input.bam} {output.bam} {output.tsv}
+        samtools index -@ {threads} {output.bam} ) &> {log}
+        """
+
+rule remove_duplicate:
+    input:
+        bam = rules.mark_duplicate.output.bam
+    output:
+        bam = outdir + "/remove_duplicate/{run}/{cell}.bam"
+    log:
+        outdir + "/remove_duplicate/{run}/{cell}.log"
+    threads:
+        4
+    shell:
+        """(
+        samtools view -@ {threads} -F 1024 -o {output.bam} {input.bam}
+        samtools index -@ {threads} {output.bam} ) &> {log}
+        """
+
+# Others
+
+rule stat_chrom_reads:
+    input:
+        bam = rules.minimap2.output.bam
+    output:
+        tsv = outdir + "/chrom_reads/{run}/{cell}.tsv"
+    threads:
+        4
+    shell:
+        """
+        ./scripts/mapping/stat_chrom_reads.sh {input.bam} {output.tsv}
+        """
+
+# rule report_summary:
+#     input:
+#         expand(outdir + "/marked_duplicate/{run_cell}.tsv", run_cell=run_cells)
+#     output:
+#         tsv = outdir + "/report_summary.tsv"
+#     run:
+#         import glob
+#         import pandas as pd
+#         rows = []
+#         for path in sorted(glob.glob(outdir + "/marked_duplicate/*/*.tsv")):
+#             d = pd.read_csv(path, sep="\t")
+#             rows.append([path.split("/")[-1][:-4], len(d), sum(d["DownSampleSize"]), sum(d["AllSize"])])
+#         m = pd.DataFrame(rows, columns=["Cell", "UMIs", "DownSampleReads", "AllReads"])
+#         m.to_csv(output.tsv, sep="\t", index=False)
+
+rule flagstat:
+    input:
+        bam = "{prefix}.bam"
+    output:
+        txt = "{prefix}.flagstat"
+    threads:
+        4
+    shell:
+        """
+        samtools flagstat -@ {threads} {input.bam} > {output.txt}
+        """
