@@ -1,13 +1,17 @@
-# Analysis of TGS-based NASC-seq
+# Workstation of nanopore-based nascent RNA sequencing
 
-## Structure of repository
+## Sumamry
 
-    1_GSE115612_scSLAM-seq
-    2_GSE128273_NASC-seq
-    3_AMUC-seq
-    4_Nanopore
-    5_NASC-seq_3h
-    6_NGS
+| Directory | Description |
+| :-- | :-- |
+| 0_Analysis | Source code of advanced analysis and plotting figures. |
+| 1_NanoNASCseq | Workflow of the basic analysis of NanoNASC-seq. |
+| 2_NASCseq | Workflow of the basic analysis of NASC-seq. |
+| 3_NASCseq_SE | Workflow of the basic analysis of NASC-seq (single-end). |
+| 4_RNAseq | Workflow of the analysis of RNA-seq. |
+| 5_RNAseq_ActD | Workflow of the analysis of RNA-seq under ActD treatment. |
+| 6_SCANseq2 | Workflow of the analysis of SCAN-seq2. |
+| 7_scCOLORseq | Workflow of the analysis of scCOLOR-seq. |
 
 
 ### 2. Ribosomal RNA

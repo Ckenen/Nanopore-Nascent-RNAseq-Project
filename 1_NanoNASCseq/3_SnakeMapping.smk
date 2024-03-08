@@ -2,7 +2,8 @@
 include: "0_SnakeCommon.smk"
 indir = "results/demux/trimmed"
 outdir = "results/mapping"
-run_cells = run_cells[:2]
+#run_cells = run_cells[:1005]
+#run_cells.remove("20221218_BlastocystC69/20221218_BlastocystC69.C33")
 
 rule all:
     input:
@@ -14,9 +15,8 @@ rule all:
         expand(outdir + "/mark_duplicate/{run_cell}.bam", run_cell=run_cells),
         expand(outdir + "/mark_duplicate/{run_cell}.flagstat", run_cell=run_cells),
         expand(outdir + "/remove_duplicate/{run_cell}.bam", run_cell=run_cells),
-        #outdir + "/report_summary.tsv",
         expand(outdir + "/chrom_reads/{run_cell}.tsv", run_cell=run_cells),
-
+        #outdir + "/report_summary.tsv",
 
 rule minimap2:
     input:
@@ -44,7 +44,8 @@ rule filter_bam:
     input:
         bam = rules.minimap2.output.bam
     output:
-        bam = outdir + "/filtered/{run}/{cell}.bam"
+        bam = temp(outdir + "/filtered/{run}/{cell}.bam"),
+        bai = temp(outdir + "/filtered/{run}/{cell}.bam.bai")
     log:
         outdir + "/filtered/{run}/{cell}.log"
     threads:
@@ -58,9 +59,11 @@ rule filter_bam:
 
 rule extract_umi:
     input:
-        bam = rules.filter_bam.output.bam
+        bam = rules.filter_bam.output.bam,
+        bai = rules.filter_bam.output.bai
     output:
-        bam = outdir + "/extract_umi/{run}/{cell}.bam"
+        bam = temp(outdir + "/extract_umi/{run}/{cell}.bam"),
+        bai = temp(outdir + "/extract_umi/{run}/{cell}.bam.bai")
     log:
         outdir + "/extract_umi/{run}/{cell}.log"
     threads:
@@ -73,9 +76,11 @@ rule extract_umi:
 
 rule stat_clip:
     input:
-        bam = rules.extract_umi.output.bam
+        bam = rules.extract_umi.output.bam,
+        bai = rules.extract_umi.output.bai
     output:
-        bam = outdir + "/stat_clip/{run}/{cell}.bam",
+        bam = temp(outdir + "/stat_clip/{run}/{cell}.bam"),
+        bai = temp(outdir + "/stat_clip/{run}/{cell}.bam.bai"),
         tsv = outdir + "/stat_clip/{run}/{cell}.tsv"
     log:
         outdir + "/stat_clip/{run}/{cell}.log"
@@ -91,7 +96,8 @@ rule stat_clip:
 
 rule mark_duplicate: 
     input:
-        bam = outdir + "/processed/{run}/{cell}.bam"
+        bam = rules.stat_clip.output.bam,
+        bai = rules.stat_clip.output.bai
     output:
         bam = outdir + "/mark_duplicate/{run}/{cell}.bam",
         tsv = outdir + "/mark_duplicate/{run}/{cell}.tsv"
@@ -109,7 +115,7 @@ rule remove_duplicate:
     input:
         bam = rules.mark_duplicate.output.bam
     output:
-        bam = outdir + "/remove_duplicate/{run}/{cell}.bam"
+        bam = outdir + "/remove_duplicate/{run}/{cell}.bam",
     log:
         outdir + "/remove_duplicate/{run}/{cell}.log"
     threads:
@@ -119,8 +125,6 @@ rule remove_duplicate:
         samtools view -@ {threads} -F 1024 -o {output.bam} {input.bam}
         samtools index -@ {threads} {output.bam} ) &> {log}
         """
-
-# Others
 
 rule stat_chrom_reads:
     input:
