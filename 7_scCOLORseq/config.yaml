@@ -1,0 +1,11 @@
+samples:
+ - SRR13120810
+ - SRR13397411
+ - SRR13397412
+ - SRR13397413
+ - SRR13397414
+ - SRR13509039
+
+mmi: /home/chenzonggui/species/mix_hg38_mm10/GRCh38.p13_GRCm38.p6.mm2.splice.mmi
+bed: /home/chenzonggui/species/mix_hg38_mm10/gencode.v39_vM25.transcripts.bed
+TallyNN: /home/chenzonggui/repositories/TallyNN-master
