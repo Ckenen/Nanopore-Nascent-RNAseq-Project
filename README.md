@@ -1,6 +1,6 @@
 # Workstation of nanopore-based nascent RNA sequencing
 
-## Sumamry
+## Summary
 
 | Directory | Description |
 | :-- | :-- |
