@@ -22,6 +22,6 @@ rule estimate_accuracy:
         24
     shell:
         """
-        ./scripts/estimate_accuracy.py {input.bam} {input.mmi} {input.bed} {threads} {output} &> {log}
+        ./scripts/consensus/estimate_accuracy.py {input.bam} {input.mmi} {input.bed} {threads} {output} &> {log}
         """
 
