@@ -2,8 +2,6 @@
 include: "0_SnakeCommon.smk"
 indir = "results/demux/trimmed"
 outdir = "results/mapping"
-#run_cells = run_cells[:1005]
-#run_cells.remove("20221218_BlastocystC69/20221218_BlastocystC69.C33")
 
 rule all:
     input:
@@ -16,7 +14,6 @@ rule all:
         expand(outdir + "/mark_duplicate/{run_cell}.flagstat", run_cell=run_cells),
         expand(outdir + "/remove_duplicate/{run_cell}.bam", run_cell=run_cells),
         expand(outdir + "/chrom_reads/{run_cell}.tsv", run_cell=run_cells),
-        #outdir + "/report_summary.tsv",
 
 rule minimap2:
     input:
@@ -137,21 +134,6 @@ rule stat_chrom_reads:
         """
         ./scripts/mapping/stat_chrom_reads.sh {input.bam} {output.tsv}
         """
-
-# rule report_summary:
-#     input:
-#         expand(outdir + "/marked_duplicate/{run_cell}.tsv", run_cell=run_cells)
-#     output:
-#         tsv = outdir + "/report_summary.tsv"
-#     run:
-#         import glob
-#         import pandas as pd
-#         rows = []
-#         for path in sorted(glob.glob(outdir + "/marked_duplicate/*/*.tsv")):
-#             d = pd.read_csv(path, sep="\t")
-#             rows.append([path.split("/")[-1][:-4], len(d), sum(d["DownSampleSize"]), sum(d["AllSize"])])
-#         m = pd.DataFrame(rows, columns=["Cell", "UMIs", "DownSampleReads", "AllReads"])
-#         m.to_csv(output.tsv, sep="\t", index=False)
 
 rule flagstat:
     input:
