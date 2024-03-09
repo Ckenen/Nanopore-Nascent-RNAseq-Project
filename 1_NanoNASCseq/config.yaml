@@ -1,0 +1,66 @@
+runs:
+ - 20220719_K562ActD3h00uM # ActD 3h, s4U 00uM 3h
+ - 20220719_K562ActD3h50uM # ActD 3h, s4U 50uM 3h
+ - 20220719_K562ActD6h00uM # ActD 6h, s4U 00uM 3h
+ - 20220719_K562ActD6h50uM # ActD 6h, s4U 50uM 3h
+ - 20220719_K562R1 # K562, 4sU 50uM 15min and 50uM 30min
+ - 20220719_K562R2 # K562, 4sU 50uM 1h and 2h
+ - 20220719_K562R3 # K562, 4sU 0uM 3h
+ - 20220719_K562R4 # K562, 4sU 50uM 3h
+# - 20220729_Embryo # R9 platform
+ - 20220729_EmbryoR10 # R10 of 20220729_Embryo
+ - 20220729_K562R1 # 0uM 3h, 50uM 3h
+ - 20220729_K562R2 # 50uM 3h
+ - 20220729_K562R3 # 0uM 3h, some embryo cells
+ - 20220808_Blastocyst # Blastocyst and mESC
+ - 20220817_Embryo
+ - 20220818_mESCR1
+ - 20220818_mESCR2
+ - 20220818_mESCR3P2 
+ - 20220820_Embryo
+ - 20220823_MidBlast
+ - 20220824_MidBlast
+ - 20220831_MidBlast
+ - 20220902_BlastocystS1
+ - 20220903_BlastocystS1
+ - 20220924_Blastocyst
+ - 20221008_Blastocyst
+ - 20221014_K562R1
+ - 20221014_K562R2
+ - 20221018_Blastocyst
+ - 20221019_BlastocystS1
+ - 20221031_Blastocyst
+ - 20221031_Blastocyst2
+ - 20221120_Blastocyst
+ - 20221122_Blastocyst
+ - 20221126_Blastocyst
+ - 20221127_Blastocyst
+ - 20221128_Blastocyst
+ - 20221129_Blastocyst
+ - 20221207_Blastocyst
+ - 20221207_Blastocyst2
+ - 20221207_Blastocyst3
+ - 20221217_BlastocystC70
+ - 20221217_BlastocystC73
+ - 20221217_BlastocystC74
+ - 20221217_BlastocystC75
+ - 20221217_BlastocystC76
+ - 20221218_BlastocystC64
+ - 20221218_BlastocystC67
+ - 20221222_BlastocystC68
+ - 20221222_BlastocystC71
+ - 20221222_BlastocystC72
+ - 20230103_BlastocystC79
+ - 20230103_BlastocystC80
+ - 20230105_BlastocystC83
+ - 20230108_BlastocystC82
+ - 20230101_BlastocystC78
+ - 20221218_BlastocystC69
+ - 20230101_BlastocystC77
+ - 20230103_BlastocystC81
+ - 20230220_BlastocystC85
+ - 20230220_BlastocystC86
+ - 20230220_BlastocystC87
+ - 20230220_BlastocystC88
+
+barcodes: data/nanopore_96_barcodes.fa

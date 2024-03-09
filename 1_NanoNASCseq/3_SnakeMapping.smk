@@ -18,8 +18,8 @@ rule all:
 rule minimap2:
     input:
         fq = indir + "/{run}/{cell}.fastq.gz",
-        mmi = lambda wildcards: FILES[get_species(wildcards.cell)]["GENOME_SPLICE_MMI"],
-        bed = lambda wildcards: FILES[get_species(wildcards.cell)]["TRANSCRIPT_BED"]
+        mmi = lambda wildcards: get_genome_splice_mmi(wildcards.cell),
+        bed = lambda wildcards: get_transcript_bed(wildcards.cell)
     output:
         bam = outdir + "/minimap2/{run}/{cell}.bam"
     log:
