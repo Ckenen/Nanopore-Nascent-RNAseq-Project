@@ -45,6 +45,10 @@ def calculate_percentage(n1, n2):
     return 0.0 if n2 == 0 else n1 * 100 / n2
 
 
+def get_ratio(n1, n2):
+    return 0.0 if n2 == 0 else n1 / n2
+
+
 def reverse_complement(seq, qua):
     return str(Seq(seq).reverse_complement()), qua[::-1]
     
@@ -230,25 +234,22 @@ class Read(object):
        
        
 def main():
-    infile, outfile = sys.argv[1:]
+    infile, outdir = sys.argv[1:]
     
     cell = get_cell(infile)
     print("Infile: %s" % infile)
-    print("Outfile: %s" % outfile)
+    print("Outfile: %s" % outdir)
     print("Cell: %s" % cell)
+    
+    if not os.path.exists(outdir):
+        os.mkdir(outdir)
     
     # Check cell information
     if True:
         meta = pd.read_excel("data/NanoNASCseq.xls")
         assert meta[meta["Cell"] == cell]["LibStruct"].values[0] == "struct2"
         assert meta[meta["Cell"] == cell]["UMI"].values[0] == 20
-        
-    ### Run
-    fw = None
-    if outfile.endswith(".gz"):
-        fw = PigzFile(outfile, "wt", threads=4)
-    else:
-        fw = open(outfile, "w+")
+            
     raw_length_counter = defaultdict(int)
     tso_ed_counter = defaultdict(int)
     polya_counter = defaultdict(int)
@@ -258,7 +259,8 @@ def main():
     reason_counter = defaultdict(int)
     n_fail = 0
     n_pass = 0
-    with FastqFile(infile) as f:
+    with FastqFile(infile) as f, \
+        open(os.path.join(outdir, "trimmed.fastq"), "w+") as fw:
         for i, r in enumerate(f):
             # if i >= 10000:
             #     break
@@ -296,39 +298,44 @@ def main():
     print("Trim too short: %d (%.2f%%)" % (reason_counter["TrimTooShort"], calculate_percentage(reason_counter["TrimTooShort"], n_total)))
     print("Pass: %d (%.2f%%)" % (n_pass, calculate_percentage(n_pass, n_total)))
     
-    with open(outfile + ".raw_lengths", "w+") as fw:
+    with open(os.path.join(outdir, "raw_length.tsv"), "w+") as fw:
+        fw.write("Length\tNumber\tRatio\n")
         t = sum(raw_length_counter.values())
         for k, n in sorted(raw_length_counter.items()):
-            fw.write("\t".join(map(str, [k, n, calculate_percentage(n, t)])) + "\n")
+            fw.write("\t".join(map(str, [k, n, get_ratio(n, t)])) + "\n")
             
-    with open(outfile + ".tsos", "w+") as fw:
+    with open(os.path.join(outdir, "tso.tsv"), "w+") as fw:
+        fw.write("ED1\tED2\tNumber\tRatio\n")
         t = sum(tso_ed_counter.values())
         for (ed1, ed2), n in sorted(tso_ed_counter.items()):
-            fw.write("\t".join(map(str, [ed1, ed2, n, calculate_percentage(n, t)])) + "\n") 
+            fw.write("\t".join(map(str, [ed1, ed2, n, get_ratio(n, t)])) + "\n") 
             
-    with open(outfile + ".polyas", "w+") as fw:
+    with open(os.path.join(outdir, "polya.tsv"), "w+") as fw:
+        fw.write("PolyA\tPolyT\tNumber\tRatio\n")
         t = sum(polya_counter.values())
         for (n1, n2), n in sorted(polya_counter.items()):
-            fw.write("\t".join(map(str, [n1, n2, n, calculate_percentage(n, t)])) + "\n")
+            fw.write("\t".join(map(str, [n1, n2, n, get_ratio(n, t)])) + "\n")
             
-    with open(outfile + ".anchors", "w+") as fw:
+    with open(os.path.join(outdir, "anchor.tsv"), "w+") as fw:
+        fw.write("Start\tED\tNumber\tRatio\n")
         t = sum(anchor_x_ed_counter.values())
         for (x, ed), n in sorted(anchor_x_ed_counter.items()):
-            fw.write("\t".join(map(str, [x, ed, n, calculate_percentage(n, t)])) + "\n")
+            fw.write("\t".join(map(str, [x, ed, n, get_ratio(n, t)])) + "\n")
     
-    with open(outfile + ".umis", "w+") as fw:
+    with open(os.path.join(outdir, "umi.tsv"), "w+") as fw:
+        fw.write("Length\tNumber\tRatio\n")
         t = sum(umi_len_counter.values())
         for k, n in sorted(umi_len_counter.items()):
-            fw.write("\t".join(map(str, [k, n, calculate_percentage(n, t)])) + "\n")
+            fw.write("\t".join(map(str, [k, n, get_ratio(n, t)])) + "\n")
     
-    with open(outfile + ".trim_lengths", "w+") as fw:
+    with open(os.path.join(outdir, "trim_length.tsv"), "w+") as fw:
+        fw.write("Length\tNumber\tRatio\n")
         t = sum(trim_length_counter.values())
         for k, n in sorted(trim_length_counter.items()):
-            fw.write("\t".join(map(str, [k, n, calculate_percentage(n, t)])) + "\n")
+            fw.write("\t".join(map(str, [k, n, get_ratio(n, t)])) + "\n")
 
-    with open(outfile + ".stats", "w+") as fw:
+    with open(os.path.join(outdir, "stats.tsv"), "w+") as fw:
         fw.write("File\tTotal\tRawTooShort\tNoTSO\tIsChimeric\tNoDirection\tNoAnchor\tNoUMI\tTrimTooShort\tPass\tPassRatio\n")
-        r = 0 if n_total == 0 else n_pass / n_total
         fw.write("\t".join(map(str, [os.path.basename(infile), 
                                      n_total, 
                                      reason_counter["RawTooShort"], 
@@ -339,7 +346,7 @@ def main():
                                      reason_counter["NoUMI"], 
                                      reason_counter["TrimTooShort"], 
                                      n_pass, 
-                                     r])) + "\n")
+                                     get_ratio(n_pass, n_total)])) + "\n")
             
     
 if __name__ == '__main__':

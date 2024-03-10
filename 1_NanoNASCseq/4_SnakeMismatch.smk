@@ -11,8 +11,6 @@ rule all:
         expand(outdir + "/ratio_rmdup/{run_cell}.tsv", run_cell=run_cells),
         expand(outdir + "/ratio_consensus/{run_cell}.tsv", run_cell=run_cells),
 
-# Events
-
 rule get_events:
     input:
         bam = indir + "/{run}/{cell}.bam",

@@ -9,9 +9,8 @@ rule all:
         expand(outdir + "/fbilr/{run}.tsv.gz", run=runs),
         expand(outdir + "/fbilr/{run}.stats.tsv.gz", run=runs),
         expand(outdir + "/splitted/{run}", run=runs),
-        expand(outdir + "/splitted/{run}.pdf", run=runs),
-        outdir + "/splitted_cell_reads.all_runs.pdf",
-        expand(outdir + "/trimmed/{run_cell}.fastq.gz", run_cell=run_cells),
+        expand(outdir + "/trimmed/{run_cell}", run_cell=run_cells),
+        outdir + "/summary_of_trimming.tsv"
 
 rule get_barcodes:
     input:
@@ -71,32 +70,12 @@ rule split_reads:
         ./scripts/demux/split_reads.py {input} {output} &> {log}
         pigz -p {threads} {output}/*/*.fastq
         """
-
-rule plot_cell_reads: # optional
-    input:
-        txtdir = rules.split_reads.output.out
-    output:
-        pdf = outdir + "/splitted/{run}.pdf"
-    shell:
-        """
-        ./scripts/demux/plot_cell_reads.py {input.txtdir}/reads.tsv {output.pdf}
-        """
-
-rule merge_pdfs: # optional
-    input:
-        pdfs = expand(rules.plot_cell_reads.output.pdf, run=runs)
-    output:
-        pdf = outdir + "/splitted_cell_reads.all_runs.pdf"
-    shell:
-        """
-        merge_pdf.py `dirname {input.pdfs[0]}`/*.pdf {output.pdf}
-        """
     
 rule trim_reads:
     input:
         fqs = rules.split_reads.output.out
     output:
-        fq = outdir + "/trimmed/{run}/{cell}.fastq.gz"
+        out = directory(outdir + "/trimmed/{run}/{cell}")
     log:
         outdir + "/trimmed/{run}/{cell}.log"
     params:
@@ -105,5 +84,20 @@ rule trim_reads:
         4
     shell:
         """
-        ./scripts/demux/trim_reads.py {params.fq} {output.fq} &> {log}
+        ./scripts/demux/trim_reads.py {params.fq} {output.out} &> {log}
+        pigz -p {threads} {output.out}/trimmed.fastq
         """
+
+rule summary_of_trimming:
+    input:
+        expand(outdir + "/trimmed/{run_cell}", run_cell=run_cells)
+    output:
+        tsv = outdir + "/summary_of_trimming.tsv"
+    run:
+        with open(output.tsv, "w+") as fw:
+            for i, f in enumerate(sorted(input)):
+                lines = open(f + "/stats.tsv").readlines()
+                if i == 0:
+                    fw.write(lines[0])
+                fw.write(lines[1])
+                    

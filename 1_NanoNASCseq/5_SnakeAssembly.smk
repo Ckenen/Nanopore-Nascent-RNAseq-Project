@@ -1,25 +1,22 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-tamadir = "/home/chenzonggui/software/tama"
-indir = "results/mapping/mark_duplicate"
+bamdir = "results/mapping/stat_clip"
 outdir = "results/assembly"
-# run_cells = run_cells[:10]
-# run_cells = run_cells_cellline
-strains = strains[:2]
+
 
 rule all:
     input:
         expand(outdir + "/stringtie/{run_cell}.gtf", run_cell=run_cells),
-        # expand(outdir + "/sqanti3/{run_cell}", run_cell=run_cells),
+        expand(outdir + "/sqanti3/{run_cell}", run_cell=run_cells_cellline),
         expand(outdir + "/tama/bed12/{run_cell}.bed", run_cell=run_cells),
-        expand(outdir + "/tama/merged/{strain}.filelist.txt", strain=strains),
-        expand(outdir + "/tama/merged/{strain}.outputs", strain=strains),
-        #expand(outdir + "/tama/merged/{strain}.gtf", strain=strains),
-        #expand(outdir + "/tama/sqanti3/{strain}", strain=strains),
+        #expand(outdir + "/tama/merged/{cell_line}.filelist.txt", cell_line=cell_lines),
+        #expand(outdir + "/tama/merged/{cell_line}.outputs", cell_line=cell_lines),
+        #expand(outdir + "/tama/merged/{cell_line}.gtf", cell_line=cell_lines),
+        #expand(outdir + "/tama/sqanti3/{cell_line}", cell_line=cell_lines),
 
 rule stringtie:
     input:
-        bam = indir + "/{run}/{cell}.bam",
+        bam = bamdir + "/{run}/{cell}.bam",
         gtf = lambda wildcards: get_annotation_gtf(wildcards.cell)
     output:
         gtf = outdir + "/stringtie/{run}/{cell}.gtf"
@@ -41,7 +38,7 @@ rule sqanti3:
     log:
         outdir + "/sqanti3/{run}/{cell}.log"
     threads:
-        1
+        4
     shell:
         """
         ./scripts/assembly/run_sqanti3_clean.sh {input} {threads} {output} &> {log}
@@ -59,17 +56,17 @@ rule tama_format_gtf_to_bed12_stringtie:
             {input} {output} &> /dev/null
         """
 
-def get_tama_bed(strain):
+def get_tama_bed(cell_line):
     paths = []
-    for cell in get_strain_cells(strain):
+    for cell in get_cell_line_cells(cell_line):
         paths.append(outdir + "/tama/bed12/%s/%s.bed" % (cell.split(".")[0], cell))
     return paths
 
 rule make_filelist:
     input:
-        beds = lambda wildcards: get_tama_bed(wildcards.strain)
+        beds = lambda wildcards: get_tama_bed(wildcards.cell_line)
     output:
-        txt = outdir + "/tama/merged/{strain}.filelist.txt"
+        txt = outdir + "/tama/merged/{cell_line}.filelist.txt"
     run:
         with open(output.txt, "w+") as fw:
             for bed in input.beds:
@@ -81,24 +78,24 @@ rule tama_merge:
     input:
         txt = rules.make_filelist.output.txt
     output:
-        out = directory(outdir + "/tama/merged/{strain}.outputs")
+        out = directory(outdir + "/tama/merged/{cell_line}.outputs")
     log:
-        outdir + "/tama/merge/{strain}.log"
+        outdir + "/tama/merged/{cell_line}.log"
     shell:
         """
         set +u; source activate py27
         mkdir {output.out}
-        python {tamadir}/tama_merge.py \
-            -d merge_dup -f {input.txt} -p {output.out}/{wildcards.strain} &> {log}
+        python {tamadir}/tama_merge.py -d merge_dup -f {input.txt} \
+            -p {output.out}/{wildcards.cell_line} > /dev/null 2> {log}
         """
 
 rule tama_bed2gtf:
     input:
-        outdir + "/tama/merged/{strain}.outputs"
+        outdir + "/tama/merged/{cell_line}.outputs"
     output:
-        gtf = outdir + "/tama/merged/{strain}.gtf"
+        gtf = outdir + "/tama/merged/{cell_line}.gtf"
     params:
-        bed = outdir + "/tama/merged/{strain}.outputs/{strain}.bed"
+        bed = outdir + "/tama/merged/{cell_line}.outputs/{cell_line}.bed"
     shell:
         """
         set +u; source activate py27
@@ -109,12 +106,12 @@ rule tama_bed2gtf:
 rule tama_sqanti3:
     input:
         gtf1 = rules.tama_bed2gtf.output.gtf,
-        gtf2 = lambda wildcards: get_annotation_gtf(get_strain_cells(wildcards.strain)[0]),
-        fasta = lambda wildcards: get_genome_fasta(get_strain_cells(wildcards.strain)[0])
+        gtf2 = lambda wildcards: get_annotation_gtf(get_cell_line_cells(wildcards.cell_line)[0]),
+        fasta = lambda wildcards: get_genome_fasta(get_cell_line_cells(wildcards.cell_line)[0])
     output:
-        out = directory(outdir + "/tama/sqanti3/{strain}")
+        out = directory(outdir + "/tama/sqanti3/{cell_line}")
     log:
-        outdir + "/tama/sqanti3/{strain}.log"
+        outdir + "/tama/sqanti3/{cell_line}.log"
     threads:
         8
     shell:

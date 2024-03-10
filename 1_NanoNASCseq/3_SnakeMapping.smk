@@ -9,7 +9,7 @@ rule all:
         expand(outdir + "/minimap2/{run_cell}.flagstat", run_cell=run_cells),
         # expand(outdir + "/filtered/{run_cell}.bam", run_cell=run_cells),
         # expand(outdir + "/extract_umi/{run_cell}.bam", run_cell=run_cells),
-        # expand(outdir + "/stat_clip/{run_cell}.bam", run_cell=run_cells),
+        expand(outdir + "/stat_clip/{run_cell}.bam", run_cell=run_cells),
         expand(outdir + "/mark_duplicate/{run_cell}.bam", run_cell=run_cells),
         expand(outdir + "/mark_duplicate/{run_cell}.flagstat", run_cell=run_cells),
         expand(outdir + "/remove_duplicate/{run_cell}.bam", run_cell=run_cells),
@@ -17,7 +17,7 @@ rule all:
 
 rule minimap2:
     input:
-        fq = indir + "/{run}/{cell}.fastq.gz",
+        fq = indir + "/{run}/{cell}/trimmed.fastq.gz",
         mmi = lambda wildcards: get_genome_splice_mmi(wildcards.cell),
         bed = lambda wildcards: get_transcript_bed(wildcards.cell)
     output:
@@ -41,8 +41,7 @@ rule filter_bam:
     input:
         bam = rules.minimap2.output.bam
     output:
-        bam = temp(outdir + "/filtered/{run}/{cell}.bam"),
-        bai = temp(outdir + "/filtered/{run}/{cell}.bam.bai")
+        bam = outdir + "/filtered/{run}/{cell}.bam"
     log:
         outdir + "/filtered/{run}/{cell}.log"
     threads:
@@ -50,34 +49,30 @@ rule filter_bam:
     shell:
         """(
         samtools view -@ {threads} --expr 'rname =~ "^chr([0-9]+|[XY])$"' \
-            -q 30 -m 200 -F 2308 -o {output.bam} {input.bam}
+            -q 30 -m 200 -F 2308 -o {output.bam} {input.bam} 
         samtools index -@ {threads} {output.bam} ) &> {log}
         """
 
 rule extract_umi:
     input:
-        bam = rules.filter_bam.output.bam,
-        bai = rules.filter_bam.output.bai
+        bam = rules.filter_bam.output.bam
     output:
-        bam = temp(outdir + "/extract_umi/{run}/{cell}.bam"),
-        bai = temp(outdir + "/extract_umi/{run}/{cell}.bam.bai")
+        bam = outdir + "/extract_umi/{run}/{cell}.bam"
     log:
         outdir + "/extract_umi/{run}/{cell}.log"
     threads:
         4
     shell:
         """(
-        ./scripts/mapping/extract_umi.py {input.bam} {output.bam}
+        ./scripts/mapping/extract_umi.py {input.bam} {output.bam} 
         samtools index -@ {threads} {output.bam} ) &> {log}
         """
 
 rule stat_clip:
     input:
         bam = rules.extract_umi.output.bam,
-        bai = rules.extract_umi.output.bai
     output:
-        bam = temp(outdir + "/stat_clip/{run}/{cell}.bam"),
-        bai = temp(outdir + "/stat_clip/{run}/{cell}.bam.bai"),
+        bam = outdir + "/stat_clip/{run}/{cell}.bam",
         tsv = outdir + "/stat_clip/{run}/{cell}.tsv"
     log:
         outdir + "/stat_clip/{run}/{cell}.log"
@@ -93,8 +88,7 @@ rule stat_clip:
 
 rule mark_duplicate: 
     input:
-        bam = rules.stat_clip.output.bam,
-        bai = rules.stat_clip.output.bai
+        bam = rules.stat_clip.output.bam
     output:
         bam = outdir + "/mark_duplicate/{run}/{cell}.bam",
         tsv = outdir + "/mark_duplicate/{run}/{cell}.tsv"
