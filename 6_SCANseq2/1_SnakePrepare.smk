@@ -15,7 +15,7 @@ srr_list = [
 rule all:
     input:
         # expand(outdir + "/sra/{srr}.sra", srr=srr_list),
-        expand(outdir + "/fastq/{srr}.fastq.gz", srr=srr_list),
+        # expand(outdir + "/fastq/{srr}.fastq.gz", srr=srr_list),
         expand(outdir + "/rename/{run}.fastq.gz", run=runs),
 
 rule prefetch:

@@ -14,7 +14,6 @@ rule all:
         # expand(outdir + "/cutadapt/{run_cell}.fastq.gz", run_cell=run_cells),
         expand(outdir + "/trim_polya/{run_cell}.fastq.gz", run_cell=run_cells),
 
-
 rule get_read_count:
     input:
         fq = "results/prepare/rename/{run}.fastq.gz"
