@@ -61,8 +61,6 @@ rule stat_clip:
         samtools index -@ {threads} {output.bam}
         """
 
-# common rules
-
 rule bam_flagstat:
     input:
         bam = "{prefix}.bam"
