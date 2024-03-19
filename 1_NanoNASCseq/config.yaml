@@ -7,8 +7,7 @@ runs:
  - 20220719_K562R2 # K562, 4sU 50uM 1h and 2h
  - 20220719_K562R3 # K562, 4sU 0uM 3h
  - 20220719_K562R4 # K562, 4sU 50uM 3h
-# - 20220729_Embryo # R9 platform
- - 20220729_EmbryoR10 # R10 of 20220729_Embryo
+ - 20220729_EmbryoR10
  - 20220729_K562R1 # 0uM 3h, 50uM 3h
  - 20220729_K562R2 # 50uM 3h
  - 20220729_K562R3 # 0uM 3h, some embryo cells
@@ -18,7 +17,7 @@ runs:
  - 20220818_mESCR2
  - 20220818_mESCR3P2 
  - 20220820_Embryo
- - 20220823_MidBlast
+ - 20220823_MidBlast #
  - 20220824_MidBlast
  - 20220831_MidBlast
  - 20220902_BlastocystS1

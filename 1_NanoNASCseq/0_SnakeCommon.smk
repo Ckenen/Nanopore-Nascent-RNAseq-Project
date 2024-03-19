@@ -5,7 +5,7 @@ import pandas as pd
 configfile: "config.yaml"
 runs = config["runs"]
 threads = 8
-dat = pd.read_excel("data/NanoNASCseq.xls")
+dat = pd.read_excel("data/NanoNASCseq.xlsx")
 dat.index = dat["Cell"]
 dat["RunCell"] = ["%s/%s" % (run, cell) for run, cell in dat[["Run", "Cell"]].values]
 
@@ -18,8 +18,6 @@ dat["RunCell"] = ["%s/%s" % (run, cell) for run, cell in dat[["Run", "Cell"]].va
 
 def get_species(cell):
     return dat.loc[cell]["Species"]
-def get_strain(cell):
-    return dat.loc[cell]["Strain"]
 def get_cell_line(cell):
     return dat.loc[cell]["CellLine"]
 def get_label(cell):
@@ -36,25 +34,8 @@ run_cells_blastocyst = list(dat_blastocyst["RunCell"])
 run_cells = run_cells_selected
 run_cells_cellline = run_cells_k562 + run_cells_mesc
 
-strains = ["K562", "mESC", "MouseBlastocyst"]
 cell_lines = ["K562", "mESC", "MouseBlastocyst"]
 tamadir = "/home/chenzonggui/software/tama" # Root directory of TAMA
-
-
-def get_strain_cells(strain):
-    import pandas as pd
-    d = pd.read_excel("data/NanoNASCseq_summary_selected.xls")
-    if strain == "K562":
-        d = d[(d["Strain"] == "K562") & ((d["s4U"] == 0) | (d["s4U"] == 50)) & (d["Time"] == 3) & (d["ActD"].isna())]
-    elif strain == "mESC":
-        d = d[(d["Strain"] == "mESC") & ((d["s4U"] == 0) | (d["s4U"] == 400)) & (d["Time"] == 3) & (d["ActD"].isna())]
-    elif strain == "MouseBlastocyst":
-        d = d[["blast" in x.lower() for x in d["Strain"]]]
-        d = d[d["Species"] == "Mouse"]
-        d = d[((d["s4U"] == 0) | (d["s4U"] == 400)) & (d["Time"] == 3) & (d["ActD"].isna())]
-    else:
-        assert False
-    return list(d["Cell"])
 
 def get_cell_line_cells(cell_line):
     d = dat
@@ -70,10 +51,10 @@ def get_cell_line_cells(cell_line):
     return list(sorted(d["Cell"]))
 
 def get_estimate_pe_model(cell):
-    strain = dat[dat["Cell"] == cell]["Strain"].values[0]
-    if strain == "K562":
+    cell_line = get_cell_line(cell)
+    if cell_line == "K562":
         return "data/Estimate.Pe.Model.consensus.K562.tsv"
-    elif strain == "mESC":
+    elif cell_line == "mESC":
         return "data/Estimate.Pe.Model.consensus.mESC.tsv"
     else:
         assert False
