@@ -10,17 +10,18 @@ rule all:
         expand(outdir + "/fbilr/{run}.stats.tsv.gz", run=runs),
         expand(outdir + "/splitted/{run}", run=runs),
         expand(outdir + "/trimmed/{run_cell}", run_cell=run_cells),
-        outdir + "/summary_of_trimming.tsv"
+        # outdir + "/summary_of_trimming.tsv",
 
 rule get_barcodes:
     input:
-        fa = config["barcodes"]
+        fa = BARCODE_FASTA
     output:
         fa = outdir + "/barcodes/{run}.fa",
         tsv = outdir + "/barcodes/{run}.tsv"
     run:
         import subprocess
         d = dat[dat["Run"] == wildcards.run]
+        assert len(d) > 0
         bcs = ["Bar%d" % bc for bc in sorted(set(d["Barcode"]))]
         cmd = "samtools faidx %s %s > %s" % (input.fa, " ".join(bcs), output.fa)
         subprocess.check_call(cmd, shell=True)
@@ -64,7 +65,7 @@ rule split_reads:
     log:
         outdir + "/splitted/{run}.log"
     threads:
-        12
+        8
     shell:
         """
         ./scripts/demux/split_reads.py {input} {output} &> {log}

@@ -93,7 +93,7 @@ rule mark_duplicate:
         bam = outdir + "/mark_duplicate/{run}/{cell}.bam",
         tsv = outdir + "/mark_duplicate/{run}/{cell}.tsv"
     log:
-        outdir + "/marked_duplicate/{run}/{cell}.log"
+        outdir + "/mark_duplicate/{run}/{cell}.log"
     threads:
         4
     shell:

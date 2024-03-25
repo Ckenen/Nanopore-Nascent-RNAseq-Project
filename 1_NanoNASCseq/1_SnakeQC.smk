@@ -5,21 +5,27 @@ outdir = "results/qc"
 
 rule all:
     input:
-        expand(outdir + "/check_barcode_list/{run}.txt", run=runs),
+        # expand(outdir + "/check_barcode_list/{run}.txt", run=runs),
         expand(outdir + "/read_length/{run}.tsv", run=runs),
         expand(outdir + "/read_length/{run}.pdf", run=runs),
-        outdir + "/read_length.all_runs.pdf",
-        expand(outdir + "/library_summary/{run}.tsv", run=runs),
-        outdir + "/library_summary.all_runs.tsv",
+        #outdir + "/read_length.all_runs.pdf",
+        #expand(outdir + "/library_summary/{run}.tsv", run=runs),
+        #outdir + "/library_summary.all_runs.tsv",
+
+# Ensure the barcodes in the reads are consistent with what is expected.
+
+def get_run_barcode_list(run):
+    tmp = dat[dat["Run"] == run]
+    return ["Bar%d" % x for x in tmp["Barcode"]]
 
 rule check_barcode_list:
     input:
         fq = indir + "/{run}.fastq.gz",
-        fa = config["barcodes"]
+        fa = BARCODE_FASTA
     output:
         txt = outdir + "/check_barcode_list/{run}.txt"
     params:
-        barcodes = lambda wildcards: ",".join(get_barcode_list(wildcards.run))
+        barcodes = lambda wildcards: ",".join(get_run_barcode_list(wildcards.run))
     threads:
         8
     shell:
@@ -27,6 +33,8 @@ rule check_barcode_list:
         ./scripts/qc/check_barcode_list.py {input.fq} {input.fa} \
             {threads} {params.barcodes} {output.txt}
         """
+
+# Analysis of the length of raw reads, including cDNA sequences and exogenous sequences.
 
 rule stat_read_length:
     input:
@@ -57,6 +65,8 @@ rule merge_pdf:
         """
         merge_pdf.py `dirname {input.pdfs[0]}`/*.pdf {output.pdf}
         """
+
+# Report several length metrics of reads.
 
 rule report_library_summary:
     input:

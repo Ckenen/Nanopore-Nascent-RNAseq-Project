@@ -44,7 +44,7 @@ def main():
                 end = max([x.end for x in v])
                 strand = v[0].strand
 
-                covs = np.zeros(end - start, dtype=np.int)
+                covs = np.zeros(end - start, dtype=int)
                 for a in v:
                     for x, y in a.blocks:
                         for idx in range(x - start, y - start):

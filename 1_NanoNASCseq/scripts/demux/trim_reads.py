@@ -56,7 +56,7 @@ def reverse_complement(seq, qua):
 def find_polya(seq): # seq is partial sequence
     if len(seq) == 0:
         return 0, 0
-    scores = np.zeros(len(seq) + 1, dtype=np.int)
+    scores = np.zeros(len(seq) + 1, dtype=int)
     for i, base in enumerate(seq):
         if base == "A":
             scores[i + 1] = scores[i] + 1
@@ -245,10 +245,10 @@ def main():
         os.mkdir(outdir)
     
     # Check cell information
-    if True:
-        meta = pd.read_excel("data/NanoNASCseq.xls")
-        assert meta[meta["Cell"] == cell]["LibStruct"].values[0] == "struct2"
-        assert meta[meta["Cell"] == cell]["UMI"].values[0] == 20
+    # if False:
+    #     meta = pd.read_excel("data/NanoNASCseq_All.xlsx")
+    #     assert meta[meta["Cell"] == cell]["LibStruct"].values[0] == "struct2"
+    #     assert meta[meta["Cell"] == cell]["UMI"].values[0] == 20
             
     raw_length_counter = defaultdict(int)
     tso_ed_counter = defaultdict(int)

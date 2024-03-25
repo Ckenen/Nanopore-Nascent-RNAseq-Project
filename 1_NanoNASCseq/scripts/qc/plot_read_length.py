@@ -55,7 +55,7 @@ def main():
     MAX_LENGTH = 5000
     BIN_WIDTH = 25
     BIN_COUNT = int((MAX_LENGTH - MIN_LENGTH) / BIN_WIDTH)
-    ys = np.zeros(BIN_COUNT, dtype=np.int)
+    ys = np.zeros(BIN_COUNT, dtype=int)
     xs = np.arange(len(ys)) * BIN_WIDTH + BIN_WIDTH / 2
     for length, count in dat[["Length", "Count"]].values:
         i = int(length / BIN_WIDTH)
