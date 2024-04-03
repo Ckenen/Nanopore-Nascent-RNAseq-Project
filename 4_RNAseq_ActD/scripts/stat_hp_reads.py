@@ -54,7 +54,7 @@ def main():
     dat = pd.DataFrame(rows)
     dat.columns = ["Chrom", "Start", "End", "UnAssinged", "HP1", "HP2"]
     dat["Assigned"] = dat["HP1"] + dat["HP2"]
-    dat["Assigned%"] = dat["Assigned"] / (dat[["UnAssinged", "HP1", "HP2"]].sum(axis=1))
+    dat["Assigned.Ratio"] = dat["Assigned"] / (dat[["UnAssinged", "HP1", "HP2"]].sum(axis=1))
     dat["Log2FC"] = np.log2(dat["HP1"] / dat["HP2"])
     dat.to_csv(outfile, sep="\t", index=False)
     

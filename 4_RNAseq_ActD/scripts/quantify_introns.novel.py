@@ -1,53 +1,69 @@
 #!/usr/bin/env python
-import sys
 from collections import defaultdict
-from Bio.Seq import Seq
-import pysam
-from pyBioInfo.Utils import SegmentTools
+import optparse
+import multiprocessing as mp
+from pyBioInfo.IO.File import BamFileRandom, FastaFileRandom
+from pyBioInfo.Utils import BlockTools
 
 
-def get_introns(s):
-    items = SegmentTools.parse_cigar(s)
-    for item in items:
-        if item[0] == "N":
-            x, y = item[3]
-            yield x, y
-            
-            
-def main():
-    f_bam, f_fasta, direction, f_out = sys.argv[1:]
-    
+def worker(bamfile, fafile, chrom, direction):
     counter = defaultdict(int)
-    with pysam.AlignmentFile(f_bam) as f:
-        for chrom in f.references:
-            for s in f.fetch(chrom):
-                introns = list(get_introns(s))
-                strand = "+" if s.is_forward else "-"
-                if s.is_paired and s.is_read2:
-                    strand = "-" if strand == "+" else "+"
-                if direction == "R":
-                    strand = "-" if strand == "+" else "+"
-                for x, y in introns:
-                    counter[(chrom, x, y, strand)] += 1
-    
+    with BamFileRandom(bamfile) as f:
+        for a in f.fetch(chrom):
+            s = a.segment
+            introns = list(BlockTools.gaps(a.blocks))
+            strand = a.strand
+            if s.is_paired and s.is_read2:
+                strand = "-" if strand == "+" else "+"
+            if direction == "R":
+                strand = "-" if strand == "+" else "+"
+            for x, y in introns:
+                counter[(chrom, x, y, strand)] += 1
+
     motifs = dict()
-    with pysam.FastaFile(f_fasta) as f:
+    with FastaFileRandom(fafile) as f:
         for k in counter:
             chrom, start, end, strand = k
             seq1 = f.fetch(chrom, start, start + 2)
             seq2 = f.fetch(chrom, end - 2, end)
-            if strand == "+":
-                motif = "%s-%s" % (seq1, seq2)
-            else:
-                motif = "%s-%s" % (str(Seq(seq2).reverse_complement()), str(Seq(seq1).reverse_complement()))
+            if strand == "-":
+                s1 = FastaFileRandom.reverse_complement(seq1)
+                s2 = FastaFileRandom.reverse_complement(seq2)
+                seq1, seq2 = s2, s1
+            motif = "%s-%s" % (seq1, seq2)
             motifs[k] = motif
+
+    return counter, motifs
+
             
-    with open(f_out, "w+") as fw:
-        for k in sorted(counter.keys()):
-            chrom, start, end, strand = k
-            row = [chrom, start, end, motifs[k], counter[k], strand]
-            fw.write("\t".join(map(str, row)) + "\n")
-               
-            
+def main():
+    parser = optparse.OptionParser(usage="%prog [options] <input.bam> <genome.fa> <out.bed>")
+    parser.add_option("-t", "--threads", dest="threads", type="int", default=0)
+    parser.add_option("-d", "--direction", dest="direction", default="F")
+    options, args = parser.parse_args()
+    bamfile, fafile, outfile = args
+    threads = options.threads
+    direction = options.direction
+
+    results = []
+    pool = mp.Pool(threads)
+    with BamFileRandom(bamfile) as f:
+        chroms = list(sorted(f.references.keys()))
+    for chrom in chroms:
+        results.append(pool.apply_async(worker, (bamfile, fafile, chrom, direction)))
+    pool.close()
+    pool.join()
+
+    with open(outfile, "w+") as fw:
+        for r in results:
+            counter, motifs = r.get()
+            for k in sorted(counter.keys()):
+                chrom, start, end, strand = k
+                count = counter[k]
+                motif = motifs[k]
+                row = [chrom, start, end, motif, count, strand]
+                fw.write("\t".join(map(str, row)) + "\n")
+
+
 if __name__ == "__main__":
     main()

@@ -1,14 +1,14 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-types = ["all", "rmdup"]
-outdir = "results/expression"
+TYPES = ["all", "rmdup"]
+OUTDIR = "results/expression"
 
 rule all:
     input:
-        expand(outdir + "/fpkm/{sample}.{species}.{t}.tsv", sample=samples, species=species_list, t=types),
-        expand(outdir + "/feature_count/{sample}.{species}.{t}.tsv", sample=samples, species=species_list, t=types),
+        expand(OUTDIR + "/fpkm/{sample}.{species}.{t}.tsv", sample=SAMPLES, species=SPECIES, t=TYPES),
+        expand(OUTDIR + "/feature_count/{sample}.{species}.{t}.tsv", sample=SAMPLES, species=SPECIES, t=TYPES),
 
-def get_bam(wildcards):
+def get_input_bam(wildcards):
     if wildcards.t == "all":
         return "results/mapping/filtered/%s.%s.bam" % (wildcards.sample, wildcards.species)
     elif wildcards.t == "rmdup":
@@ -17,31 +17,42 @@ def get_bam(wildcards):
 
 rule calculate_fpkm:
     input:
-        bam = lambda wildcards: get_bam(wildcards),
-        bed = lambda wildcards: FILES[wildcards.species]["TRANSCRIPT_BED_GZ"],
-        tsv = lambda wildcards: FILES[wildcards.species]["ANNOTATION_TSV"]
+        bam = lambda wildcards: get_input_bam(wildcards),
+        bed = lambda wildcards: get_transcript_bed(wildcards.species),
+        tsv = lambda wildcards: get_annotation_tsv(wildcards.species)
     output:
-        tsv = outdir + "/fpkm/{sample}.{species}.{t}.tsv"
+        tsv = OUTDIR + "/fpkm/{sample}.{species}.{t}.tsv"
     log:
-        outdir + "/fpkm/{sample}.{species}.{t}.log"
+        OUTDIR + "/fpkm/{sample}.{species}.{t}.log"
     threads:
-        8
+        THREADS
     shell:
         """
-        nasctools CalculateFPKM --threads {threads} --strand R --layout PE --annotation {input.tsv} {input.bam} {input.bed} {output.tsv} &> {log}
+        nasctools CalculateFPKM \
+            --threads {threads} \
+            --strand R \
+            --layout PE \
+            --annotation {input.tsv} \
+            {input.bam} {input.bed} {output.tsv} &> {log}
         """
 
 rule feature_count:
     input:
-        bam = lambda wildcards: get_bam(wildcards),
-        gtf = lambda wildcards: FILES[wildcards.species]["ANNOTATION_GTF"]
+        bam = lambda wildcards: get_input_bam(wildcards),
+        gtf = lambda wildcards: get_gtf(wildcards.species)
     output:
-        tsv = outdir + "/feature_count/{sample}.{species}.{t}.tsv"
+        tsv = OUTDIR + "/feature_count/{sample}.{species}.{t}.tsv"
     log:
-        outdir + "/feature_count/{sample}.{species}.{t}.log"
+        OUTDIR + "/feature_count/{sample}.{species}.{t}.log"
+    conda:
+        "subread"
     threads:
-        8
+        THREADS
     shell:
         """
-        featureCounts -T {threads} -s 2 -p -B -a {input.gtf} -o {output.tsv} {input.bam} &> {log}
+        featureCounts -T {threads} \
+            -s 2 -p -B \
+            -a {input.gtf} \
+            -o {output.tsv} \
+            {input.bam} &> {log}
         """

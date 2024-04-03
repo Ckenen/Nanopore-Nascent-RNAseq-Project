@@ -1,58 +1,100 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-samples = [
+SAMPLES = [
     "20221128_K562_Actd_0h_rep1", "20221128_K562_Actd_0h_rep2",
     "20221128_K562_Actd_3h_rep1", "20221128_K562_Actd_3h_rep2",
     "20221128_K562_Actd_6h_rep1", "20221128_K562_Actd_6h_rep2"]
-indir = "results/mapping/rmdup"
-outdir = "results/snps"
+INDIR = "results/mapping/rmdup"
+OUTDIR = "results/snps"
 
 rule all:
     input:
-        expand(outdir + "/vcfs/{sample}.vcf.gz", sample=samples[:1]),
-        expand(outdir + "/phased_bam/{sample}.bam", sample=samples),
-        expand(outdir + "/counts/{sample}.tsv", sample=samples),
+        expand(OUTDIR + "/vcfs/{sample}.vcf.gz", sample=SAMPLES[:1]),
+        expand(OUTDIR + "/haplotag/{sample}.bam", sample=SAMPLES),
+        expand(OUTDIR + "/counts/{sample}.tsv", sample=SAMPLES),
+        OUTDIR + "/merge_strategy/all_samples_merged.bam",
+        OUTDIR + "/merge_strategy/all_samples_merged.vcf.gz",
 
 rule call_het_snps:
     input:
-        bam = indir + "/{sample}.human.bam"
+        bam = INDIR + "/{sample}.human.bam"
     output:
-        vcf = temp(outdir + "/vcfs/{sample}.vcf"),
-        vcf_gz = outdir + "/vcfs/{sample}.vcf.gz"
+        vcf = temp(OUTDIR + "/vcfs/{sample}.vcf"),
+        vcf_gz = OUTDIR + "/vcfs/{sample}.vcf.gz"
     log:
-        outdir + "/vcfs/{sample}.log"
+        OUTDIR + "/vcfs/{sample}.log"
     threads:
-        24
+        THREADS
     shell:
         """(
-        ./scripts/call_het_snps_from_rnaseq.py {input.bam} {wildcards.sample} {threads} {output.vcf}
+        ./scripts/call_het_snps_from_rnaseq.py \
+            {input.bam} {wildcards.sample} {threads} {output.vcf}
         bgzip -c {output.vcf} > {output.vcf_gz}
         tabix -p vcf {output.vcf_gz} ) &> {log}
         """
 
 rule haplotag:
     input:
-        vcf = outdir + "/vcfs/20221128_K562_Actd_0h_rep1.vcf.gz",
-        bam = indir + "/{sample}.human.bam"
+        vcf = OUTDIR + "/vcfs/20221128_K562_Actd_0h_rep1.vcf.gz",
+        bam = INDIR + "/{sample}.human.bam",
+        fsa = get_fasta("human")
     output:
-        bam = outdir + "/phased_bam/{sample}.bam"
+        bam = OUTDIR + "/haplotag/{sample}.bam"
+    conda:
+        "whatshap"
     log:
-        outdir + "/phased_bam/{sample}.log"
+        OUTDIR + "/haplotag/{sample}.log"
     shell:
         """
-        whatshap haplotag --ignore-read-groups -o {output.bam} {input.vcf} {input.bam} &> {log}
+        whatshap haplotag --ignore-read-groups \
+            -r {input.fsa} \
+            -o {output.bam} \
+            {input.vcf} {input.bam} &> {log}
         samtools index {output.bam}
         """
 
 rule stat_hp_reads:
     input:
-        vcf = outdir + "/vcfs/20221128_K562_Actd_0h_rep1.vcf.gz",
-        bam = outdir + "/phased_bam/{sample}.bam"
+        vcf = OUTDIR + "/vcfs/20221128_K562_Actd_0h_rep1.vcf.gz",
+        bam = OUTDIR + "/haplotag/{sample}.bam"
     output:
-        tsv = outdir + "/counts/{sample}.tsv"
+        tsv = OUTDIR + "/counts/{sample}.tsv"
     log:
-        outdir + "/counts/{sample}.log"
+        OUTDIR + "/counts/{sample}.log"
     shell:
         """
         ./scripts/stat_hp_reads.py {input.vcf} {input.bam} {output.tsv} &> {log}
+        """
+
+rule merge_bam:
+    input:
+        bams = expand(INDIR + "/{sample}.human.bam", sample=SAMPLES)
+    output:
+        bam = OUTDIR + "/merge_strategy/all_samples_merged.bam"
+    log:
+        OUTDIR + "/merge_strategy/all_samples_merged.log"
+    threads:
+        4
+    shell:
+        """(
+        samtools merge -@ {threads} -o {output.bam} {input.bams}
+        samtools index -@ {threads} {output.bam} ) &> {log}
+        """
+
+rule call_het_snps_from_merged_bam:
+    input:
+        bam = OUTDIR + "/merge_strategy/all_samples_merged.bam"
+    output:
+        vcf = temp(OUTDIR + "/merge_strategy/all_samples_merged.vcf"),
+        vcf_gz = OUTDIR + "/merge_strategy/all_samples_merged.vcf.gz"
+    log:
+        OUTDIR + "/merge_strategy/all_samples_merged.log"
+    threads:
+        THREADS
+    shell:
+        """(
+        ./scripts/call_het_snps_from_rnaseq.py \
+            {input.bam} AllSample {threads} {output.vcf}
+        bgzip -c {output.vcf} > {output.vcf_gz}
+        tabix -p vcf {output.vcf_gz} ) &> {log}
         """

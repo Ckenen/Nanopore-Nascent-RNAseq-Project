@@ -1,111 +1,164 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-indir = "results/prepare/bowtie2"
-outdir = "results/mapping"
+INDIR = "results/prepare/bowtie2"
+OUTDIR = "results/mapping"
 
 rule all:
     input:
-        outdir + "/star/index",
-        expand(outdir + "/star/mapped/{sample}", sample=samples),
-        expand(outdir + "/filtered/{sample}.{species}.bam", sample=samples, species=species_list),
-        expand(outdir + "/filtered/{sample}.{species}.flagstat", sample=samples, species=species_list),
-        expand(outdir + "/infer_experiment/{sample}.{species}.txt", sample=samples, species=species_list),
-        expand(outdir + "/rmdup/{sample}.{species}.bam", sample=samples, species=species_list),
-        expand(outdir + "/rmdup/{sample}.{species}.flagstat", sample=samples, species=species_list),
+        OUTDIR + "/merged/human_fly.fa",
+        OUTDIR + "/merged/human_fly.gtf",
+        OUTDIR + "/star/index",
+        expand(OUTDIR + "/star/mapped/{sample}", sample=SAMPLES),
+        expand(OUTDIR + "/filtered/{sample}.{species}.bam", sample=SAMPLES, species=SPECIES),
+        expand(OUTDIR + "/filtered/{sample}.{species}.flagstat", sample=SAMPLES, species=SPECIES),
+        expand(OUTDIR + "/infer_experiment/{sample}.{species}.txt", sample=SAMPLES, species=SPECIES),
+        expand(OUTDIR + "/rmdup/{sample}.{species}.bam", sample=SAMPLES, species=SPECIES),
+        expand(OUTDIR + "/rmdup/{sample}.{species}.flagstat", sample=SAMPLES, species=SPECIES),
 
-rule star_index:
+rule merge_fasta:
     input:
-        fa1 = FILES["human"]["GENOME_FASTA"],
-        fa2 = FILES["fly"]["GENOME_FASTA"],
-        gtf1 = FILES["human"]["ANNOTATION_GTF"],
-        gtf2 = FILES["fly"]["ANNOTATION_GTF"]
+        fa1 = get_fasta("human"),
+        fa2 = get_fasta("fly")
     output:
-        fa = outdir + "/star/index.integrated.fa",
-        gtf = outdir + "/star/index.integrated.gtf",
-        idx = directory(outdir + "/star/index")
+        fa = OUTDIR + "/merged/human_fly.fa"
+    conda:
+        "star"
     log:
-        outdir + "/star/index.log"
-    threads:
-        24
+       OUTDIR + "/merged/human_fly.fa.log" 
     shell:
         """(
         cat {input.fa1} {input.fa2} > {output.fa}
-        samtools faidx {output.fa}
-        cat {input.gtf1} {input.gtf2} | grep -v '#' | sort -k1,1 -k4,4n -k5,5n > {output.gtf}
-        mkdir -p {output.idx}
-        STAR --runMode genomeGenerate --runThreadN {threads} --genomeDir {output.idx} \
-            --genomeFastaFiles {output.fa} --sjdbGTFfile {output.gtf} ) &> {log}
+        samtools faidx {output.fa} ) &> {log}
         """
 
-# STAR --genomeLoad Remove --genomeDir results/mapping/star/index
+rule merge_gtf:
+    input:
+        gtf1 = get_gtf("human"),
+        gtf2 = get_gtf("fly")
+    output:
+        gtf = OUTDIR + "/merged/human_fly.gtf",
+        gtf2 = OUTDIR + "/merged/human_fly.gtf.gz"
+    conda:
+        "star"
+    log:
+        OUTDIR + "/merged/human_fly.gtf.log" 
+    shell:
+        """(
+        cat {input.gtf1} {input.gtf2} | grep -v '#' \
+            | sort -k1,1 -k4,4n -k5,5n > {output.gtf} 
+        bgzip -c {output.gtf} > {output.gtf2}
+        tabix -p gff {output.gtf2} ) &> {log}
+        """
+
+rule star_index:
+    input:
+        fa = rules.merge_fasta.output.fa,
+        gtf = rules.merge_gtf.output.gtf
+    output:
+        idx = directory(OUTDIR + "/star/index")
+    log:
+        OUTDIR + "/star/index.log"
+    conda:
+        "star"
+    threads:
+        THREADS
+    shell:
+        """(
+        mkdir -p {output.idx}
+        STAR --runMode genomeGenerate \
+            --runThreadN {threads} \
+            --genomeDir {output.idx} \
+            --genomeFastaFiles {input.fa} \
+            --sjdbGTFfile {input.gtf} ) &> {log}
+        """
 
 rule star_mapping:
     input:
-        fq1 = indir + "/{sample}.1.fq.gz",
-        fq2 = indir + "/{sample}.2.fq.gz",
+        fq1 = INDIR + "/{sample}.1.fq.gz",
+        fq2 = INDIR + "/{sample}.2.fq.gz",
         index = rules.star_index.output.idx
     output:
-        out = directory(outdir + "/star/mapped/{sample}")
+        out = directory(OUTDIR + "/star/mapped/{sample}")
     log:
-        outdir + "/star/mapped/{sample}.log"
+        OUTDIR + "/star/mapped/{sample}.log"
+    conda:
+        "star"
     threads:
-        12
+        THREADS
     shell:
-        """
+        """(
         mkdir -p {output}
         STAR --runThreadN {threads} \
             --outFileNamePrefix {output}/{wildcards.sample}. \
             --genomeDir {input.index} \
-            --genomeLoad LoadAndKeep \
             --readFilesCommand zcat \
             --outSAMattributes All \
             --outSAMtype BAM SortedByCoordinate \
             --limitBAMsortRAM 150000000000 \
-            --readFilesIn {input.fq1} {input.fq2} &> {log}
+            --readFilesIn {input.fq1} {input.fq2} ) &> {log}
         """
 
 rule filter_and_split: # filter and split
     input:
         rules.star_mapping.output.out
     output:
-        bam1 = outdir + "/filtered/{sample}.human.bam",
-        bam2 = outdir + "/filtered/{sample}.fly.bam"
+        bam = OUTDIR + "/filtered/{sample}.{species}.bam"
     log:
-        outdir + "/filtered/{sample}.log"
+        OUTDIR + "/filtered/{sample}.{species}.log"
+    conda:
+        "star"
+    params:
+        pattern = lambda wildcards: get_seqname_pattern(wildcards.species)
     threads:
         4
     shell:
         """(
-        samtools view -@ {threads} -q 30 -d "NH:1" -f 2 -F 2308 --expr 'rname =~ "^chr([0-9]+|[XY])$"' \
-            -o {output.bam1} {input}/{wildcards.sample}.Aligned.sortedByCoord.out.bam
-        samtools view -@ {threads} -q 30 -d "NH:1" -f 2 -F 2308 --expr 'rname =~ "^(2L|2R|3L|3R|[4XY])$"' \
-            -o {output.bam2} {input}/{wildcards.sample}.Aligned.sortedByCoord.out.bam
-        samtools index {output.bam1}
-        samtools index {output.bam2} ) &> {log}
+        samtools view -@ {threads} \
+            -q 30 \
+            -d "NH:1" \
+            -f 2 \
+            -F 2308 \
+            --expr 'rname =~ "{params.pattern}"' \
+            -o {output.bam} \
+            {input}/{wildcards.sample}.Aligned.sortedByCoord.out.bam
+        samtools index -@ {threads} {output.bam} ) &> {log}
         """
 
 rule infer_experiment:
     input:
-        bam = outdir + "/filtered/{sample}.{species}.bam",
-        bed = lambda wildcards: FILES[wildcards.species]["GENE_BED"]
+        bam = rules.filter_and_split.output.bam,
+        bed = lambda wildcards: get_gene_bed(wildcards.species)
     output:
-        txt = outdir + "/infer_experiment/{sample}.{species}.txt"
+        txt = OUTDIR + "/infer_experiment/{sample}.{species}.txt"
+    log:
+        OUTDIR + "/infer_experiment/{sample}.{species}.log"
+    conda:
+        "rseqc"
     shell:
         """
-        infer_experiment.py -s 2000000 -i {input.bam} -r {input.bed} > {output.txt} 2> /dev/null
+        infer_experiment.py \
+            -s 2000000 \
+            -i {input.bam} \
+            -r {input.bed} > {output.txt} 2> {log}
         """
 
 rule rmdup:
     input:
-        bam = outdir + "/filtered/{sample}.{species}.bam"
+        bam = rules.filter_and_split.output.bam
     output:
-        bam = outdir + "/rmdup/{sample}.{species}.bam",
-        txt = outdir + "/rmdup/{sample}.{species}_metrics.txt"
+        bam = OUTDIR + "/rmdup/{sample}.{species}.bam",
+        txt = OUTDIR + "/rmdup/{sample}.{species}_metrics.txt"
     log:
-        outdir + "/rmdup/{sample}.{species}.log"
+        OUTDIR + "/rmdup/{sample}.{species}.log"
+    conda:
+        "picard"
     shell:
         """(
-        picard MarkDuplicates --REMOVE_DUPLICATES true -I {input.bam} -O {output.bam} -M {output.txt} 
+        picard MarkDuplicates \
+            --REMOVE_DUPLICATES true \
+            -I {input.bam} \
+            -O {output.bam} \
+            -M {output.txt} 
         samtools index {output.bam} ) &> {log}
         """
 
@@ -116,7 +169,11 @@ rule bam_flagstat:
         bam = "{prefix}.bam"
     output:
         txt = "{prefix}.flagstat"
+    conda:
+        "star"
+    threads:
+        4
     shell:
         """
-        samtools flagstat {input.bam} > {output.txt}
+        samtools flagstat -@ {threads} {input.bam} > {output.txt}
         """
