@@ -3,30 +3,30 @@ include: "0_SnakeCommon.smk"
 
 if False:
     # paired-end, 50 uM, 1 h
-    dat = dat[(dat["Run"] == "GSE128273_NASCseq_K562") & (dat["s4U"] == 50) & (dat["Time"] == 1)]
+    dat = dat[(dat["run"] == "GSE128273_NASCseq_K562") & (dat["s4U"] == 50) & (dat["Time"] == 1)]
     run_cells = []
-    for run, cell in dat[["Run", "Cell"]].values:
+    for run, cell in dat[["run", "Cell"]].values:
         run_cells.append("%s/%s" % (run, cell))
     run_cells = run_cells[:2]
     run_cells = ["GSE128273_NASCseq_K562/SRR8724040"]
-outdir = "results/reproduced"
+OUTDIR = "results/reproduced"
 
 rule all:
     input:
-        #expand(outdir + "/trimmedFastqFiles/{run_cell}", run_cell=run_cells),
-        #outdir + "/reference/hg38_ercc.fa",
-        #outdir + "/reference/hg38_ercc.gtf",
-        #outdir + "/reference/strandedness.csv",
-        #outdir + "/reference/hg38_ercc.star.index",
-        #expand(outdir + "/bamFiles/aligned_bam/{run_cell}", run_cell=run_cells),
-        #expand(outdir + "/bamFiles/duplRemoved_bam/{run_cell}", run_cell=run_cells),
-        expand(outdir + "/bamFiles/annotated_bam/{run_cell}", run_cell=run_cells),
-        #expand(outdir + "/bamFiles/annotated_sorted_bam/{run_cell}", run_cell=run_cells),
-        #expand(outdir + "/bamFiles/tagged_bam/{run_cell}", run_cell=run_cells),
-        # outdir + "/QC/vcfFilter",
-        #expand(outdir + "/bamFiles/filteredTagged_bam/{run_cell}", run_cell=run_cells),
-        #expand(outdir + "/QC/errorRates/{run_cell}_ErrorRates.csv", run_cell=run_cells),
-        expand(outdir + "/outfiles/pkl_files/{run_cell}_prepared.pkl", run_cell=run_cells),
+        #expand(OUTDIR + "/trimmedFastqFiles/{run_cell}", run_cell=run_cells),
+        #OUTDIR + "/reference/hg38_ercc.fa",
+        #OUTDIR + "/reference/hg38_ercc.gtf",
+        #OUTDIR + "/reference/strandedness.csv",
+        #OUTDIR + "/reference/hg38_ercc.star.index",
+        #expand(OUTDIR + "/bamFiles/aligned_bam/{run_cell}", run_cell=run_cells),
+        #expand(OUTDIR + "/bamFiles/duplRemoved_bam/{run_cell}", run_cell=run_cells),
+        expand(OUTDIR + "/bamFiles/annotated_bam/{run_cell}", run_cell=run_cells),
+        #expand(OUTDIR + "/bamFiles/annotated_sorted_bam/{run_cell}", run_cell=run_cells),
+        #expand(OUTDIR + "/bamFiles/tagged_bam/{run_cell}", run_cell=run_cells),
+        # OUTDIR + "/QC/vcfFilter",
+        #expand(OUTDIR + "/bamFiles/filteredTagged_bam/{run_cell}", run_cell=run_cells),
+        #expand(OUTDIR + "/QC/errorRates/{run_cell}_ErrorRates.csv", run_cell=run_cells),
+        expand(OUTDIR + "/outfiles/pkl_files/{run_cell}_prepared.pkl", run_cell=run_cells),
 
 
 def get_fastqs(wildcards):
@@ -41,9 +41,9 @@ rule trim_galore: # Encounter error in tanglab3 and tanglab4 nodes
     input:
         fqs = lambda wildcards: get_fastqs(wildcards)
     output:
-        out = directory(outdir + "/trimmedFastqFiles/{run}/{cell}")
+        out = directory(OUTDIR + "/trimmedFastqFiles/{run}/{cell}")
     log:
-        outdir + "/trimmedFastqFiles/{run}/{cell}.log"
+        OUTDIR + "/trimmedFastqFiles/{run}/{cell}.log"
     threads:
         8
     shell:
@@ -58,8 +58,8 @@ rule make_reference:
         ercc_fa = "data/ERCC92.fa",
         ercc_gtf = "data/ERCC92.gtf"
     output:
-        fa = outdir + "/reference/hg38_ercc.fa",
-        gtf = outdir + "/reference/hg38_ercc.gtf"
+        fa = OUTDIR + "/reference/hg38_ercc.fa",
+        gtf = OUTDIR + "/reference/hg38_ercc.gtf"
     shell:
         """
         cat {input.hg_fa} {input.ercc_fa} > {output.fa}
@@ -69,9 +69,9 @@ rule make_reference:
 
 rule make_strandness:
     input:
-        gtf = outdir + "/reference/hg38_ercc.gtf"
+        gtf = OUTDIR + "/reference/hg38_ercc.gtf"
     output:
-        txt = outdir + "/reference/strandedness.csv"
+        txt = OUTDIR + "/reference/strandedness.csv"
     shell:
         """
         python ./scripts/make_strandedness.py {input.gtf} {output.txt}
@@ -79,12 +79,12 @@ rule make_strandness:
 
 rule build_star_index:
     input:
-        fa = outdir + "/reference/hg38_ercc.fa",
-        gtf = outdir + "/reference/hg38_ercc.gtf"
+        fa = OUTDIR + "/reference/hg38_ercc.fa",
+        gtf = OUTDIR + "/reference/hg38_ercc.gtf"
     output:
-        out = directory(outdir + "/reference/hg38_ercc.star.index")
+        out = directory(OUTDIR + "/reference/hg38_ercc.star.index")
     log:
-        outdir + "/reference/hg38_ercc.star.log"
+        OUTDIR + "/reference/hg38_ercc.star.log"
     threads:
         48
     shell:
@@ -95,16 +95,16 @@ rule build_star_index:
 
 rule star_mapping:
     input:
-        fqs = outdir + "/trimmedFastqFiles/{run}/{cell}",
-        idx = outdir + "/reference/hg38_ercc.star.index"
+        fqs = OUTDIR + "/trimmedFastqFiles/{run}/{cell}",
+        idx = OUTDIR + "/reference/hg38_ercc.star.index"
     output:
-        out = directory(outdir + "/bamFiles/aligned_bam/{run}/{cell}")
+        out = directory(OUTDIR + "/bamFiles/aligned_bam/{run}/{cell}")
     log:
-        outdir + "/bamFiles/aligned_bam/{run}/{cell}.log"
+        OUTDIR + "/bamFiles/aligned_bam/{run}/{cell}.log"
     params:
-        fq1 = outdir + "/trimmedFastqFiles/{run}/{cell}/{cell}_1_val_1.fq",
-        fq2 = outdir + "/trimmedFastqFiles/{run}/{cell}/{cell}_2_val_2.fq",
-        prefix = outdir + "/bamFiles/aligned_bam/{run}/{cell}/{cell}_"
+        fq1 = OUTDIR + "/trimmedFastqFiles/{run}/{cell}/{cell}_1_val_1.fq",
+        fq2 = OUTDIR + "/trimmedFastqFiles/{run}/{cell}/{cell}_2_val_2.fq",
+        prefix = OUTDIR + "/bamFiles/aligned_bam/{run}/{cell}/{cell}_"
     threads:
         12
     shell:
@@ -135,15 +135,15 @@ rule star_mapping:
 
 rule mark_duplicates:
     input:
-        bamdir = outdir + "/bamFiles/aligned_bam/{run}/{cell}"
+        bamdir = OUTDIR + "/bamFiles/aligned_bam/{run}/{cell}"
     output:
-        out = directory(outdir + "/bamFiles/duplRemoved_bam/{run}/{cell}")
+        out = directory(OUTDIR + "/bamFiles/duplRemoved_bam/{run}/{cell}")
     log:
-        outdir + "/bamFiles/duplRemoved_bam/{run}/{cell}.log"
+        OUTDIR + "/bamFiles/duplRemoved_bam/{run}/{cell}.log"
     params:
-        inbam = outdir + "/bamFiles/aligned_bam/{run}/{cell}/{cell}_Aligned.sortedByCoord.out.bam",
-        outbam = outdir + "/bamFiles/duplRemoved_bam/{run}/{cell}/{cell}_removeDupl.bam",
-        txt = outdir + "/bamFiles/duplRemoved_bam/{run}/{cell}/{cell}_removeDuplMetrics.txt"
+        inbam = OUTDIR + "/bamFiles/aligned_bam/{run}/{cell}/{cell}_Aligned.sortedByCoord.out.bam",
+        outbam = OUTDIR + "/bamFiles/duplRemoved_bam/{run}/{cell}/{cell}_removeDupl.bam",
+        txt = OUTDIR + "/bamFiles/duplRemoved_bam/{run}/{cell}/{cell}_removeDuplMetrics.txt"
     threads:
         8
     shell:
@@ -155,15 +155,15 @@ rule mark_duplicates:
 
 rule annotate:
     input:
-        bamdir = outdir + "/bamFiles/duplRemoved_bam/{run}/{cell}",
-        gtf = outdir + "/reference/hg38_ercc.gtf"
+        bamdir = OUTDIR + "/bamFiles/duplRemoved_bam/{run}/{cell}",
+        gtf = OUTDIR + "/reference/hg38_ercc.gtf"
     output:
-        out = directory(outdir + "/bamFiles/annotated_bam/{run}/{cell}")
+        out = directory(OUTDIR + "/bamFiles/annotated_bam/{run}/{cell}")
     log:
-        outdir + "/bamFiles/annotated_bam/{run}/{cell}.log"
+        OUTDIR + "/bamFiles/annotated_bam/{run}/{cell}.log"
     params:
-        inbam = outdir + "/bamFiles/duplRemoved_bam/{run}/{cell}/{cell}_removeDupl.bam",
-        outbam = outdir + "/bamFiles/annotated_bam/{run}/{cell}/{cell}_removeDupl.bam.featureCounts.bam"
+        inbam = OUTDIR + "/bamFiles/duplRemoved_bam/{run}/{cell}/{cell}_removeDupl.bam",
+        outbam = OUTDIR + "/bamFiles/annotated_bam/{run}/{cell}/{cell}_removeDupl.bam.featureCounts.bam"
     shell:
         """
         mkdir -p {output.out}
@@ -172,12 +172,12 @@ rule annotate:
 
 rule annotate_sort:
     input:
-        bamdir = outdir + "/bamFiles/annotated_bam/{run}/{cell}"
+        bamdir = OUTDIR + "/bamFiles/annotated_bam/{run}/{cell}"
     output:
-        directory(outdir + "/bamFiles/annotated_sorted_bam/{run}/{cell}")
+        directory(OUTDIR + "/bamFiles/annotated_sorted_bam/{run}/{cell}")
     params:
-        inbam = outdir + "/bamFiles/annotated_bam/{run}/{cell}/{cell}_removeDupl.bam.featureCounts.bam",
-        outbam = outdir + "/bamFiles/annotated_sorted_bam/{run}/{cell}/{cell}_sorted.bam"
+        inbam = OUTDIR + "/bamFiles/annotated_bam/{run}/{cell}/{cell}_removeDupl.bam.featureCounts.bam",
+        outbam = OUTDIR + "/bamFiles/annotated_sorted_bam/{run}/{cell}/{cell}_sorted.bam"
     shell:
         """
         mkdir -p {output}
@@ -187,16 +187,16 @@ rule annotate_sort:
 
 rule conversiontag:
     input:
-        bamdir = outdir + "/bamFiles/annotated_sorted_bam/{run}/{cell}",
-        txt = outdir + "/reference/strandedness.csv"
+        bamdir = OUTDIR + "/bamFiles/annotated_sorted_bam/{run}/{cell}",
+        txt = OUTDIR + "/reference/strandedness.csv"
     output:
-        out = directory(outdir + "/bamFiles/tagged_bam/{run}/{cell}")
+        out = directory(OUTDIR + "/bamFiles/tagged_bam/{run}/{cell}")
     log:
-        outdir + "/bamFiles/tagged_bam/{run}/{cell}.log"
+        OUTDIR + "/bamFiles/tagged_bam/{run}/{cell}.log"
     params:
-        inbam = outdir + "/bamFiles/annotated_sorted_bam/{run}/{cell}/{cell}_sorted.bam",
-        outbam = outdir + "/bamFiles/tagged_bam/{run}/{cell}/{cell}_PositionTagged.bam",
-        txt = outdir + "/bamFiles/tagged_bam/{run}/{cell}/{cell}_PosTag.csv"
+        inbam = OUTDIR + "/bamFiles/annotated_sorted_bam/{run}/{cell}/{cell}_sorted.bam",
+        outbam = OUTDIR + "/bamFiles/tagged_bam/{run}/{cell}/{cell}_PositionTagged.bam",
+        txt = OUTDIR + "/bamFiles/tagged_bam/{run}/{cell}/{cell}_PosTag.csv"
     shell:
         """
         mkdir -p {output}
@@ -206,9 +206,9 @@ rule conversiontag:
 
 rule vcfFilter:
     input:
-        expand(outdir + "/bamFiles/tagged_bam/{run_cell}", run_cell=run_cells)
+        expand(OUTDIR + "/bamFiles/tagged_bam/{run_cell}", run_cell=run_cells)
     output:
-        out = directory(outdir + "/QC/vcfFilter")
+        out = directory(OUTDIR + "/QC/vcfFilter")
     shell:
         """
         mkdir -p {output}
@@ -217,17 +217,17 @@ rule vcfFilter:
 
 rule tagFilter:
     input:
-        bamdir = outdir + "/bamFiles/tagged_bam/{run}/{cell}",
-        #snpdir = outdir + "/QC/vcfFilter"
+        bamdir = OUTDIR + "/bamFiles/tagged_bam/{run}/{cell}",
+        #snpdir = OUTDIR + "/QC/vcfFilter"
     output:
-        out = directory(outdir + "/bamFiles/filteredTagged_bam/{run}/{cell}")
+        out = directory(OUTDIR + "/bamFiles/filteredTagged_bam/{run}/{cell}")
     log:
-        outdir + "/bamFiles/filteredTagged_bam/{run}/{cell}.log"
+        OUTDIR + "/bamFiles/filteredTagged_bam/{run}/{cell}.log"
     params:
-        # txt = outdir + "/QC/vcfFilter/posfile.csv",
+        # txt = OUTDIR + "/QC/vcfFilter/posfile.csv",
         txt = "../public/NASC-seq/data/posfile.chr.csv",
-        inbam = outdir + "/bamFiles/tagged_bam/{run}/{cell}/{cell}_PositionTagged.bam",
-        outbam = outdir + "/bamFiles/filteredTagged_bam/{run}/{cell}/{cell}_taggedFiltered.bam"
+        inbam = OUTDIR + "/bamFiles/tagged_bam/{run}/{cell}/{cell}_PositionTagged.bam",
+        outbam = OUTDIR + "/bamFiles/filteredTagged_bam/{run}/{cell}/{cell}_taggedFiltered.bam"
     shell:
         """
         mkdir -p {output.out}
@@ -238,9 +238,9 @@ rule tagFilter:
 
 # rule cellQC:
 #     input:
-#         expand(outdir + "/bamFiles/annotated_bam/{run_cell}", run_cell=run_cells)
+#         expand(OUTDIR + "/bamFiles/annotated_bam/{run_cell}", run_cell=run_cells)
 #     output:
-#         out = directory(outdir + "/QC/featureCount_QC")
+#         out = directory(OUTDIR + "/QC/featureCount_QC")
 #     shell:
 #         """
 #         Rscript ../public/NASC-seq/scripts/cellQC.R results/reproduced/bamFiles/annotated_bam/GSE128273_NASCseq_K562 {output}
@@ -253,12 +253,12 @@ rule tagFilter:
 
 rule calculatePE:
     input:
-        bamdir = outdir + "/bamFiles/filteredTagged_bam/{run}/{cell}"
+        bamdir = OUTDIR + "/bamFiles/filteredTagged_bam/{run}/{cell}"
     output:
-        txt1 = outdir + "/QC/errorRates/{run}/{cell}_ErrorRates.csv",
-        txt2 = outdir + "/QC/p_e/{run}/{cell}_p_e.txt"
+        txt1 = OUTDIR + "/QC/errorRates/{run}/{cell}_ErrorRates.csv",
+        txt2 = OUTDIR + "/QC/p_e/{run}/{cell}_p_e.txt"
     params:
-        inbam = outdir + "/bamFiles/filteredTagged_bam/{run}/{cell}/{cell}_taggedFiltered.bam"
+        inbam = OUTDIR + "/bamFiles/filteredTagged_bam/{run}/{cell}/{cell}_taggedFiltered.bam"
     shell:
         """
         set +u; source activate py27
@@ -267,14 +267,14 @@ rule calculatePE:
 
 rule prepareData:
     input:
-        bamdir = outdir + "/bamFiles/filteredTagged_bam/{run}/{cell}",
-        txt = outdir + "/QC/p_e/{run}/{cell}_p_e.txt"
+        bamdir = OUTDIR + "/bamFiles/filteredTagged_bam/{run}/{cell}",
+        txt = OUTDIR + "/QC/p_e/{run}/{cell}_p_e.txt"
     output:
-        pkl = outdir + "/outfiles/pkl_files/{run}/{cell}_prepared.pkl"
+        pkl = OUTDIR + "/outfiles/pkl_files/{run}/{cell}_prepared.pkl"
     log:
-        outdir + "/outfiles/pkl_files/{run}/{cell}_prepared.log"
+        OUTDIR + "/outfiles/pkl_files/{run}/{cell}_prepared.log"
     params:
-        inbam = outdir + "/bamFiles/filteredTagged_bam/{run}/{cell}/{cell}_taggedFiltered.bam"
+        inbam = OUTDIR + "/bamFiles/filteredTagged_bam/{run}/{cell}/{cell}_taggedFiltered.bam"
     shell:
         """
         python3 ../public/NASC-seq/scripts/prepare_pickles.py {params.inbam} {output.pkl} `cat {input.txt}` {wildcards.cell} &> {log}

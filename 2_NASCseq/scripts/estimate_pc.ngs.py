@@ -49,7 +49,7 @@ def main():
     model = pd.read_csv(f_model, sep="\t")
     p_e = 0
     for t, k, r, w in model.values:
-        p_e += (dat["Ratio[NoSNP]"][t] * k * w)
+        p_e += (dat["Ratio.NoSNP"][t] * k * w)
 
     mapper = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N"}
     data = defaultdict(int)

@@ -1,0 +1,1 @@
+../../1_NanoNASCseq/scripts/signal2noise/estimate_pc.py
