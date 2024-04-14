@@ -1,0 +1,112 @@
+RUNS_TEST:
+ - 20220130_Cell8
+ - 20220316_Cell40
+ - 20220413_Cell26
+ - 20220506_Cell25
+ - 20220520_Cell16
+ - 20220525_Run1
+ - 20220525_Run2
+ - 20220601_Cell22
+ - 20220607_Cell40
+ - 20220615_Cell68
+ - 20220621_R10Test
+
+RUNS_K562:
+ - 20220719_K562ActD3h00uM # s4U: 0uM3h, ActD: 3h
+ - 20220719_K562ActD3h50uM # s4U: 50uM3h, ActD: 3h
+ - 20220719_K562ActD6h00uM # s4U: 0uM3h, ActD: 6h
+ - 20220719_K562ActD6h50uM # s4U: 50uM3h, ActD: 6h
+ - 20220719_K562R1
+ - 20220719_K562R2
+ - 20220719_K562R3
+ - 20220719_K562R4
+ - 20220729_K562R1
+ - 20220729_K562R2
+ - 20220729_K562R3 # Contain some mouse blastocyst cells
+ - 20221014_K562R1 # R10.4.1
+ - 20221014_K562R2 # R10.4.1
+
+RUNS_MESC:
+ - 20220818_mESCR1
+ - 20220818_mESCR2
+ - 20220818_mESCR3 # Merged to 20220818_mESCR3M
+ - 20220818_mESCR3M
+ - 20220818_mESCR3P2 # Merged to 20220818_mESCR3M
+
+RUNS_HUMAN_BLASTOCYST:
+ - 20220912_HumanBlastR1 # HumanBlastocyst
+ - 20220912_HumanBlastR2 # HumanBlastocyst
+
+RUNS_MOUSE_BLASTOCYST:
+ - 20220719_Embryo
+ - 20220729_Embryo
+ - 20220729_EmbryoR10
+ - 20220808_Blastocyst
+ - 20220817_Embryo
+ - 20220820_Embryo # Contain some mESC cells
+ - 20220823_MidBlast
+ - 20220824_MidBlast
+ - 20220831_MidBlast
+ - 20220902_Blastocyst # Merged to 20220902_BlastocystM
+ - 20220902_BlastocystM
+ - 20220902_BlastocystS1 # Merged to 20220902_BlastocystM
+ - 20220903_Blastocyst # Merged to 20220903_BlastocystM
+ - 20220903_BlastocystM
+ - 20220903_BlastocystS1 # Merged to 20220903_BlastocystM
+ - 20220924_Blastocyst
+ - 20221008_Blastocyst
+ - 20221018_Blastocyst
+# - 20221019_Blastocyst # Bad chip
+ - 20221019_BlastocystS1
+ - 20221031_Blastocyst
+ - 20221031_Blastocyst2
+ - 20221120_Blastocyst
+ - 20221122_Blastocyst
+ - 20221126_Blastocyst
+ - 20221127_Blastocyst
+ - 20221128_Blastocyst
+ - 20221129_Blastocyst
+ - 20221207_Blastocyst
+ - 20221207_Blastocyst2
+ - 20221207_Blastocyst3
+ - 20221217_BlastocystC70
+ - 20221217_BlastocystC73
+ - 20221217_BlastocystC74
+ - 20221217_BlastocystC75
+ - 20221217_BlastocystC76
+ - 20221218_BlastocystC64
+ - 20221218_BlastocystC67
+ - 20221218_BlastocystC69
+ - 20221222_BlastocystC68
+ - 20221222_BlastocystC71
+ - 20221222_BlastocystC72
+ - 20230101_BlastocystC77
+ - 20230101_BlastocystC78
+ - 20230103_BlastocystC79
+ - 20230103_BlastocystC80
+ - 20230103_BlastocystC81
+ - 20230105_BlastocystC83
+ - 20230108_BlastocystC82
+ - 20230220_BlastocystC85
+ - 20230220_BlastocystC86
+ - 20230220_BlastocystC87
+ - 20230220_BlastocystC88
+
+THREADS: 12
+BARCODES: data/nanopore_96_barcodes.fa
+TABLE: data/NanoNASCseq_All.xlsx
+
+HUMAN_GENOME_FASTA: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/GRCh38.canonical.genome.fa
+HUMAN_SPLICE_MMI: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/GRCh38.canonical.mm2.splice.mmi
+HUMAN_TRANSCRIPT_BED: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.transcripts.bed
+HUMAN_SNP_BED_GZ: /lustre/grp/tfclab/chenzg/species/homo_sapiens/hg38/snp151.3.lite.bed.gz
+HUMAN_SNP_VCF_GZ: ../4_RNAseq_ActD/results/snps/vcfs/20221128_K562_Actd_0h_rep1.vcf.gz
+HUMAN_ANNOTATION_GTF_GZ: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.sorted.gtf
+
+MOUSE_GENOME_FASTA: /lustre/grp/tfclab/chenzg/species/mus_musculus/GRCm38.p6/GRCm38.canonical.genome.fa
+MOUSE_SPLICE_MMI: /lustre/grp/tfclab/chenzg/species/mus_musculus/GRCm38.p6/GRCm38.canonical.mm2.splice.mmi
+MOUSE_TRANSCRIPT_BED: /lustre/grp/tfclab/chenzg/species/mus_musculus/GRCm38.p6/gencode.vM25.annotation.transcripts.bed
+MOUSE_SNP_BED_GZ: /lustre/grp/tfclab/chenzg/species/mus_musculus/mm10/snp142.3.lite.bed.gz
+# MOUSE_SNP_VCF_GZ: /lustre/grp/tfclab/chenzg/species/mus_musculus/mgp/C57BL_6NJ_DBA_2J.mgp.v5.snps.dbSNP142.vcf.gz
+MOUSE_SNP_VCF_GZ: /lustre/grp/tfclab/chenzg/repositories/GRCm38_B6D2F1_SNP_Indel/GRCm38_C57BL_6NJ_DBA_2J_SNP_Indel.vcf.gz
+MOUSE_ANNOTATION_GTF_GZ: /lustre/grp/tfclab/chenzg/species/mus_musculus/GRCm38.p6/gencode.vM25.annotation.sorted.gtf

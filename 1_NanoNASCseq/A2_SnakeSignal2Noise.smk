@@ -1,22 +1,22 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-indir = "results/mismatch/ratio_consensus"
-outdir = "results/signal2noise"
-run_cells = run_cells_cellline
+INDIR = "results/mismatch/ratio_consensus"
+OUTDIR = "results/signal2noise"
+RUN_CELLS = RUN_CELLS_CELLLINE
 
 rule all:
     input:
-        expand(outdir + "/pc/{run_cell}.tsv", run_cell=run_cells),
+        expand(OUTDIR + "/pc/{run_cell}.tsv", run_cell=RUN_CELLS),
 
 
 rule estimate_pc:
     input:
-        tsv1 = indir + "/{run}/{cell}.tsv",
-        tsv2 = lambda wildcards: get_estimate_pe_model(wildcards.cell),
-        tsv3 = indir + "/{run}/{cell}.events.tsv",
+        tsv1 = lambda wildcards: get_estimate_pe_model(wildcards.cell),
+        tsv2 = INDIR + "/{run}/{cell}.tsv",
+        tsv3 = INDIR + "/{run}/{cell}.events.tsv"
     output:
-        tsv = outdir + "/pc/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/pc/{run}/{cell}.tsv"
     shell:
         """
-        ./scripts/signal2noise/estimate_pc.py {input} > {output}
+        ./scripts/signal2noise/estimate_pc.py -m long -e {input.tsv3} {input.tsv1} {input.tsv2} > {output}
         """

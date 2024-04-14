@@ -1,33 +1,33 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-gtfdir = "results/assembly/stringtie"
-outdir = "results/assembly_custom"
-# strains = strains[:2]
+GTFDIR = "results/assembly/stringtie"
+OUTDIR = "results/assembly_custom"
 
 rule all:
     input:
-        expand(outdir + "/merged/{strain}.config.tsv", strain=strains),
-        expand(outdir + "/merged/{strain}.outputs", strain=strains),
-        expand(outdir + "/sqanti3/{strain}", strain=strains),
-        expand(outdir + "/gtf/{strain}.all.gtf", strain=strains),
-        # expand(outdir + "/sqanti3_new/{run_cell}", run_cell=run_cells_cellline),
+        expand(OUTDIR + "/merged/{group}.config.tsv", group=GROUPS),
+        expand(OUTDIR + "/merged/{group}.outputs", group=GROUPS),
+        expand(OUTDIR + "/sqanti3/{group}", group=GROUPS),
+        expand(OUTDIR + "/gtf/{group}.all.gtf", group=GROUPS),
+        expand(OUTDIR + "/gtf_full/{group}.gtf", group=GROUPS),
+        # expand(OUTDIR + "/sqanti3_new/{run_cell}", run_cell=run_cells_cellline),
 
 rule make_config:
     output:
-        tsv = outdir + "/merged/{strain}.config.tsv"
+        tsv = OUTDIR + "/merged/{group}.config.tsv"
     run:
-        cells = get_strain_cells(wildcards.strain)
+        cells = get_group_cells(wildcards.group)
         with open(output.tsv, "w+") as fw:
             fw.write("Cell\tGtf\n")
             for cell in cells:
-                path = gtfdir + "/%s/%s.gtf" % (cell.split(".")[0], cell)
+                path = GTFDIR + "/%s/%s.gtf" % (cell.split(".")[0], cell)
                 fw.write("%s\t%s\n" % (cell, path))
 
 rule merge_isoforms:
     input:
         tsv = rules.make_config.output.tsv
     output:
-        out = directory(outdir + "/merged/{strain}.outputs")
+        out = directory(OUTDIR + "/merged/{group}.outputs")
     shell:
         """
         ./scripts/assembly/merge_isoforms.py {input.tsv} {output.out}
@@ -36,12 +36,12 @@ rule merge_isoforms:
 rule sqanti3:
     input:
         gtf1 = rules.merge_isoforms.output.out,
-        gtf2 = lambda wildcards: get_annotation_gtf(get_strain_cells(wildcards.strain)[0]),
-        fa = lambda wildcards: get_genome_fasta(get_strain_cells(wildcards.strain)[0])
+        gtf2 = lambda wildcards: get_annotation_gtf(get_group_cells(wildcards.group)[0]),
+        fa = lambda wildcards: get_genome_fasta(get_group_cells(wildcards.group)[0])
     output:
-        out = directory(outdir + "/sqanti3/{strain}")
+        out = directory(OUTDIR + "/sqanti3/{group}")
     log:
-        outdir + "/sqanti3/{strain}.log"
+        OUTDIR + "/sqanti3/{group}.log"
     params:
         gtf1 = rules.merge_isoforms.output.out + "/merged.gtf"
     threads:
@@ -54,10 +54,10 @@ rule sqanti3:
 rule merge_gtf:
     input:
         sqdir = rules.sqanti3.output.out,
-        ref = lambda wildcards: get_annotation_gtf(get_strain_cells(wildcards.strain)[0]),
+        ref = lambda wildcards: get_annotation_gtf(get_group_cells(wildcards.group)[0]),
     output:
-        gtf1 = outdir + "/gtf/{strain}.novel.gtf",
-        gtf2 = outdir + "/gtf/{strain}.all.gtf"
+        gtf1 = OUTDIR + "/gtf/{group}.novel.gtf",
+        gtf2 = OUTDIR + "/gtf/{group}.all.gtf"
     params:
         tsv = rules.sqanti3.output.out + "/merged_classification.txt",
         gtf = rules.sqanti3.output.out + "/merged_corrected.gtf.cds.gff",
@@ -71,25 +71,36 @@ rule merge_gtf:
         tabix -p gff {output.gtf2}.gz
         """
 
-def get_strain_novel_gtf(cell):
-    strain = dat[dat["Cell"] == cell]["Strain"].values[0]
-    if strain == "K562":
-        return outdir + "/gtf/K562.all.gtf"
-    elif strain == "mESC":
-        return outdir + "/gtf/mESC.all.gtf"
-    else:
-        return outdir + "/gtf/MouseBlastocyst.all.gtf"
-    
+rule add_attributes:
+    input:
+        gtf = rules.merge_gtf.output.gtf2
+    output:
+        gtf = OUTDIR + "/gtf_full/{group}.gtf"
+    shell:
+        """
+        ./scripts/assembly/add_attributes.py {input.gtf} {output.gtf}
+        bgzip -c {output.gtf} > {output.gtf}.gz
+        tabix -p gff {output.gtf}.gz
+        """
 
+def get_group_novel_gtf(cell):
+    group = DAT[DAT["Cell"] == cell]["group"].values[0]
+    if group == "K562":
+        return OUTDIR + "/gtf/K562.all.gtf"
+    elif group == "mESC":
+        return OUTDIR + "/gtf/mESC.all.gtf"
+    else:
+        return OUTDIR + "/gtf/MouseBlastocyst.all.gtf"
+    
 rule sqanti3_new:
     input:
-        gtf1 = gtfdir + "/{run}/{cell}.gtf",
-        gtf2 = lambda wildcards: get_strain_novel_gtf(wildcards.cell),
+        gtf1 = GTFDIR + "/{run}/{cell}.gtf",
+        gtf2 = lambda wildcards: get_group_novel_gtf(wildcards.cell),
         fasta = lambda wildcards: get_genome_fasta(wildcards.cell)
     output:
-        out = directory(outdir + "/sqanti3_new/{run}/{cell}")
+        out = directory(OUTDIR + "/sqanti3_new/{run}/{cell}")
     log:
-        outdir + "/sqanti3_new/{run}/{cell}.log"
+        OUTDIR + "/sqanti3_new/{run}/{cell}.log"
     threads:
         1
     shell:

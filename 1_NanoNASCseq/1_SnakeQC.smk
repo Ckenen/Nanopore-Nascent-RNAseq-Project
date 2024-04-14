@@ -1,46 +1,47 @@
-#!/usr/bin/env runsnakemake
+#!/usr/bin/env RUNSnakemake
 include: "0_SnakeCommon.smk"
-indir = "data/datasets"
-outdir = "results/qc"
+INDIR = "data/datasets"
+OUTDIR = "results/qc"
 
 rule all:
     input:
-        # expand(outdir + "/check_barcode_list/{run}.txt", run=runs),
-        expand(outdir + "/read_length/{run}.tsv", run=runs),
-        expand(outdir + "/read_length/{run}.pdf", run=runs),
-        #outdir + "/read_length.all_runs.pdf",
-        #expand(outdir + "/library_summary/{run}.tsv", run=runs),
-        #outdir + "/library_summary.all_runs.tsv",
+        expand(OUTDIR + "/check_barcode_list/{run}.txt", run=RUNS),
+        expand(OUTDIR + "/read_length/{run}.tsv", run=RUNS),
+        expand(OUTDIR + "/read_length/{run}.pdf", run=RUNS),
+        expand(OUTDIR + "/library_summary/{run}.tsv", run=RUNS),
 
 # Ensure the barcodes in the reads are consistent with what is expected.
 
 def get_run_barcode_list(run):
-    tmp = dat[dat["Run"] == run]
+    tmp = DAT[DAT["Run"] == run]
+    assert len(tmp) > 0
     return ["Bar%d" % x for x in tmp["Barcode"]]
 
 rule check_barcode_list:
     input:
-        fq = indir + "/{run}.fastq.gz",
-        fa = BARCODE_FASTA
+        fq = INDIR + "/{run}.fastq.gz",
+        fa = config["BARCODES"]
     output:
-        txt = outdir + "/check_barcode_list/{run}.txt"
+        txt = OUTDIR + "/check_barcode_list/{run}.txt"
+    log:
+        OUTDIR + "/check_barcode_list/{run}.log"
     params:
         barcodes = lambda wildcards: ",".join(get_run_barcode_list(wildcards.run))
     threads:
-        8
+        4
     shell:
         """
         ./scripts/qc/check_barcode_list.py {input.fq} {input.fa} \
-            {threads} {params.barcodes} {output.txt}
+            {threads} {params.barcodes} {output.txt} &> {log}
         """
 
 # Analysis of the length of raw reads, including cDNA sequences and exogenous sequences.
 
 rule stat_read_length:
     input:
-        fq = indir + "/{run}.fastq.gz"
+        fq = INDIR + "/{run}.fastq.gz"
     output:
-        txt = outdir + "/read_length/{run}.tsv"
+        txt = OUTDIR + "/read_length/{run}.tsv"
     shell:
         """
         ./scripts/qc/stat_read_length.sh {input.fq} > {output.txt}
@@ -50,20 +51,10 @@ rule plot_read_length:
     input:
         txt = rules.stat_read_length.output.txt
     output:
-        pdf = outdir + "/read_length/{run}.pdf"
+        pdf = OUTDIR + "/read_length/{run}.pdf"
     shell:
         """
         ./scripts/qc/plot_read_length.py {input.txt} {output.pdf}
-        """
-
-rule merge_pdf:
-    input:
-        pdfs = expand(outdir + "/read_length/{run}.pdf", run=runs)
-    output:
-        pdf = outdir + "/read_length.all_runs.pdf"
-    shell:
-        """
-        merge_pdf.py `dirname {input.pdfs[0]}`/*.pdf {output.pdf}
         """
 
 # Report several length metrics of reads.
@@ -72,19 +63,8 @@ rule report_library_summary:
     input:
         txt = rules.stat_read_length.output.txt
     output:
-        txt = outdir + "/library_summary/{run}.tsv"
+        txt = OUTDIR + "/library_summary/{run}.tsv"
     shell:
         """
         ./scripts/qc/report_library_summary.py {input.txt} > {output.txt}
-        """
-
-rule merge_library_summary:
-    input:
-        txts = expand(rules.report_library_summary.output.txt, run=runs)
-    output:
-        txt = outdir + "/library_summary.all_runs.tsv"
-    shell:
-        """
-        head -n 1 {input.txts[0]} > {output.txt}
-        for f in {input.txts}; do tail -n 1 $f >> {output.txt}; done
         """

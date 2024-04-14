@@ -1,36 +1,41 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-indir = "results/demux/trimmed"
-outdir = "results/mapping"
+INDIR = "results/demux/trimmed"
+OUTDIR = "results/mapping"
 
 rule all:
     input:
-        expand(outdir + "/minimap2/{run_cell}.bam", run_cell=run_cells),
-        expand(outdir + "/minimap2/{run_cell}.flagstat", run_cell=run_cells),
-        # expand(outdir + "/filtered/{run_cell}.bam", run_cell=run_cells),
-        # expand(outdir + "/extract_umi/{run_cell}.bam", run_cell=run_cells),
-        expand(outdir + "/stat_clip/{run_cell}.bam", run_cell=run_cells),
-        expand(outdir + "/mark_duplicate/{run_cell}.bam", run_cell=run_cells),
-        expand(outdir + "/mark_duplicate/{run_cell}.flagstat", run_cell=run_cells),
-        expand(outdir + "/remove_duplicate/{run_cell}.bam", run_cell=run_cells),
-        expand(outdir + "/chrom_reads/{run_cell}.tsv", run_cell=run_cells),
+        expand(OUTDIR + "/minimap2/{run_cell}.bam", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/minimap2/{run_cell}.flagstat", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/filtered/{run_cell}.bam", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/extract_umi/{run_cell}.bam", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/stat_clip/{run_cell}.bam", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/mark_duplicate/{run_cell}.bam", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/mark_duplicate/{run_cell}.flagstat", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/remove_duplicate/{run_cell}.bam", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/chrom_reads/{run_cell}.tsv", run_cell=RUN_CELLS),
 
 rule minimap2:
     input:
-        fq = indir + "/{run}/{cell}/trimmed.fastq.gz",
+        fq = INDIR + "/{run}/{cell}/trimmed.fastq.gz",
         mmi = lambda wildcards: get_genome_splice_mmi(wildcards.cell),
         bed = lambda wildcards: get_transcript_bed(wildcards.cell)
     output:
-        bam = outdir + "/minimap2/{run}/{cell}.bam"
+        bam = OUTDIR + "/minimap2/{run}/{cell}.bam"
     log:
-        outdir + "/minimap2/{run}/{cell}.log"
+        OUTDIR + "/minimap2/{run}/{cell}.log"
+    conda:
+        "minimap2"
     params:
         rg = '@RG\\tID:{cell}\\tLB:{cell}\\tSM:{cell}'
     threads:
-        12
+        THREADS
     shell:
         """(
-        minimap2 -ax splice -u f -Y --MD -R '{params.rg}' --junc-bed {input.bed} \
+        minimap2 -ax splice -u f \
+            -Y --MD \
+            -R '{params.rg}' \
+            --junc-bed {input.bed} \
             -t {threads} {input.mmi} {input.fq} \
             | samtools view -@ {threads} -u - \
             | samtools sort -@ {threads} -T {output.bam} -o {output.bam} - 
@@ -41,9 +46,9 @@ rule filter_bam:
     input:
         bam = rules.minimap2.output.bam
     output:
-        bam = outdir + "/filtered/{run}/{cell}.bam"
+        bam = OUTDIR + "/filtered/{run}/{cell}.bam"
     log:
-        outdir + "/filtered/{run}/{cell}.log"
+        OUTDIR + "/filtered/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -57,9 +62,9 @@ rule extract_umi:
     input:
         bam = rules.filter_bam.output.bam
     output:
-        bam = outdir + "/extract_umi/{run}/{cell}.bam"
+        bam = OUTDIR + "/extract_umi/{run}/{cell}.bam"
     log:
-        outdir + "/extract_umi/{run}/{cell}.log"
+        OUTDIR + "/extract_umi/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -72,10 +77,10 @@ rule stat_clip:
     input:
         bam = rules.extract_umi.output.bam,
     output:
-        bam = outdir + "/stat_clip/{run}/{cell}.bam",
-        tsv = outdir + "/stat_clip/{run}/{cell}.tsv"
+        bam = OUTDIR + "/stat_clip/{run}/{cell}.bam",
+        tsv = OUTDIR + "/stat_clip/{run}/{cell}.tsv"
     log:
-        outdir + "/stat_clip/{run}/{cell}.log"
+        OUTDIR + "/stat_clip/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -90,10 +95,10 @@ rule mark_duplicate:
     input:
         bam = rules.stat_clip.output.bam
     output:
-        bam = outdir + "/mark_duplicate/{run}/{cell}.bam",
-        tsv = outdir + "/mark_duplicate/{run}/{cell}.tsv"
+        bam = OUTDIR + "/mark_duplicate/{run}/{cell}.bam",
+        tsv = OUTDIR + "/mark_duplicate/{run}/{cell}.tsv"
     log:
-        outdir + "/mark_duplicate/{run}/{cell}.log"
+        OUTDIR + "/mark_duplicate/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -106,9 +111,9 @@ rule remove_duplicate:
     input:
         bam = rules.mark_duplicate.output.bam
     output:
-        bam = outdir + "/remove_duplicate/{run}/{cell}.bam",
+        bam = OUTDIR + "/remove_duplicate/{run}/{cell}.bam",
     log:
-        outdir + "/remove_duplicate/{run}/{cell}.log"
+        OUTDIR + "/remove_duplicate/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -121,7 +126,7 @@ rule stat_chrom_reads:
     input:
         bam = rules.minimap2.output.bam
     output:
-        tsv = outdir + "/chrom_reads/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/chrom_reads/{run}/{cell}.tsv"
     threads:
         4
     shell:

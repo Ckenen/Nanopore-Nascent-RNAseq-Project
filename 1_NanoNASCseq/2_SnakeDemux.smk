@@ -1,26 +1,26 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-indir = "data/datasets"
-outdir = "results/demux"
+INDIR = "data/datasets"
+OUTDIR = "results/demux"
 
 rule all:
     input:
-        expand(outdir + "/barcodes/{run}.fa", run=runs),
-        expand(outdir + "/fbilr/{run}.tsv.gz", run=runs),
-        expand(outdir + "/fbilr/{run}.stats.tsv.gz", run=runs),
-        expand(outdir + "/splitted/{run}", run=runs),
-        expand(outdir + "/trimmed/{run_cell}", run_cell=run_cells),
-        # outdir + "/summary_of_trimming.tsv",
+        expand(OUTDIR + "/barcodes/{run}.fa", run=RUNS),
+        expand(OUTDIR + "/fbilr/{run}.tsv.gz", run=RUNS),
+        expand(OUTDIR + "/fbilr/{run}.stats.tsv.gz", run=RUNS),
+        expand(OUTDIR + "/splitted/{run}", run=RUNS),
+        expand(OUTDIR + "/trimmed/{run_cell}", run_cell=RUN_CELLS),
+        OUTDIR + "/summary_of_trimming.tsv",
 
 rule get_barcodes:
     input:
-        fa = BARCODE_FASTA
+        fa = config["BARCODES"]
     output:
-        fa = outdir + "/barcodes/{run}.fa",
-        tsv = outdir + "/barcodes/{run}.tsv"
+        fa = OUTDIR + "/barcodes/{run}.fa",
+        tsv = OUTDIR + "/barcodes/{run}.tsv"
     run:
         import subprocess
-        d = dat[dat["Run"] == wildcards.run]
+        d = DAT[DAT["Run"] == wildcards.run]
         assert len(d) > 0
         bcs = ["Bar%d" % bc for bc in sorted(set(d["Barcode"]))]
         cmd = "samtools faidx %s %s > %s" % (input.fa, " ".join(bcs), output.fa)
@@ -31,14 +31,14 @@ rule get_barcodes:
 
 rule fbilr:
     input:
-        fq = indir + "/{run}.fastq.gz",
+        fq = INDIR + "/{run}.fastq.gz",
         fa = rules.get_barcodes.output.fa
     output:
-        txt = outdir + "/fbilr/{run}.tsv.gz"
+        txt = OUTDIR + "/fbilr/{run}.tsv.gz"
     log:
-        outdir + "/fbilr/{run}.log"
+        OUTDIR + "/fbilr/{run}.log"
     threads:
-        24
+        THREADS
     shell:
         """(
         fbilr -t {threads} -m PE -b {input.fa} {input.fq} \
@@ -49,7 +49,7 @@ rule stat_matrix2:
     input:
         txt = rules.fbilr.output.txt
     output:
-        txt = outdir + "/fbilr/{run}.stats.tsv.gz"
+        txt = OUTDIR + "/fbilr/{run}.stats.tsv.gz"
     shell:
         """
         ./scripts/demux/stat_matrix2.sh {input.txt} | gzip -c > {output.txt}
@@ -57,15 +57,15 @@ rule stat_matrix2:
 
 rule split_reads:
     input:
-        fq = indir + "/{run}.fastq.gz",
+        fq = INDIR + "/{run}.fastq.gz",
         mtx = rules.fbilr.output.txt,
         txt = rules.get_barcodes.output.tsv
     output:
-        out = directory(outdir + "/splitted/{run}")
+        out = directory(OUTDIR + "/splitted/{run}")
     log:
-        outdir + "/splitted/{run}.log"
+        OUTDIR + "/splitted/{run}.log"
     threads:
-        8
+        THREADS
     shell:
         """
         ./scripts/demux/split_reads.py {input} {output} &> {log}
@@ -76,24 +76,22 @@ rule trim_reads:
     input:
         fqs = rules.split_reads.output.out
     output:
-        out = directory(outdir + "/trimmed/{run}/{cell}")
+        out = directory(OUTDIR + "/trimmed/{run}/{cell}")
     log:
-        outdir + "/trimmed/{run}/{cell}.log"
+        OUTDIR + "/trimmed/{run}/{cell}.log"
     params:
         fq = rules.split_reads.output.out + "/succeed/{cell}.fastq.gz"
-    threads:
-        4
     shell:
         """
         ./scripts/demux/trim_reads.py {params.fq} {output.out} &> {log}
-        pigz -p {threads} {output.out}/trimmed.fastq
+        gzip {output.out}/trimmed.fastq
         """
 
 rule summary_of_trimming:
     input:
-        expand(outdir + "/trimmed/{run_cell}", run_cell=run_cells)
+        expand(OUTDIR + "/trimmed/{run_cell}", run_cell=RUN_CELLS)
     output:
-        tsv = outdir + "/summary_of_trimming.tsv"
+        tsv = OUTDIR + "/summary_of_trimming.tsv"
     run:
         with open(output.tsv, "w+") as fw:
             for i, f in enumerate(sorted(input)):

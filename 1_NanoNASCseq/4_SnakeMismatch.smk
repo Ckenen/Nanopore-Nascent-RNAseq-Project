@@ -1,24 +1,24 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-indir = "results/mapping/mark_duplicate"
-outdir = "results/mismatch"
-# run_cells = run_cells[:2]
+INDIR = "results/mapping/mark_duplicate"
+OUTDIR = "results/mismatch"
+# RUN_CELLS = RUN_CELLS[:2]
 
 rule all:
     input:
-        expand(outdir + "/events/{run_cell}.bam", run_cell=run_cells),
-        expand(outdir + "/ratio_all/{run_cell}.tsv", run_cell=run_cells),
-        expand(outdir + "/ratio_rmdup/{run_cell}.tsv", run_cell=run_cells),
-        expand(outdir + "/ratio_consensus/{run_cell}.tsv", run_cell=run_cells),
+        expand(OUTDIR + "/events/{run_cell}.bam", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/ratio_all/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/ratio_rmdup/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/ratio_consensus/{run_cell}.tsv", run_cell=RUN_CELLS),
 
 rule get_events:
     input:
-        bam = indir + "/{run}/{cell}.bam",
+        bam = INDIR + "/{run}/{cell}.bam",
         bed = lambda wildcards: get_snp_bed(wildcards.cell)
     output:
-        bam = outdir + "/events/{run}/{cell}.bam"
+        bam = OUTDIR + "/events/{run}/{cell}.bam"
     log:
-        outdir + "/events/{run}/{cell}.log"
+        OUTDIR + "/events/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -31,9 +31,9 @@ rule report_mismatch_all:
     input:
         bam = rules.get_events.output.bam
     output:
-        tsv = outdir + "/ratio_all/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/ratio_all/{run}/{cell}.tsv"
     log:
-        outdir + "/ratio_all/{run}/{cell}.log"
+        OUTDIR + "/ratio_all/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -45,9 +45,9 @@ rule report_mismatch_uniq:
     input:
         bam = rules.get_events.output.bam
     output:
-        tsv = outdir + "/ratio_rmdup/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/ratio_rmdup/{run}/{cell}.tsv"
     log:
-        outdir + "/ratio_rmdup/{run}/{cell}.log"
+        OUTDIR + "/ratio_rmdup/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -60,10 +60,10 @@ rule report_mismatch_consensus:
         bam = rules.get_events.output.bam,
         fasta = lambda wildcards: get_genome_fasta(wildcards.cell)
     output:
-        tsv = outdir + "/ratio_consensus/{run}/{cell}.tsv",
-        tsv2 = outdir + "/ratio_consensus/{run}/{cell}.events.tsv"
+        tsv = OUTDIR + "/ratio_consensus/{run}/{cell}.tsv",
+        tsv2 = OUTDIR + "/ratio_consensus/{run}/{cell}.events.tsv"
     log:
-        outdir + "/ratio_consensus/{run}/{cell}.log"
+        OUTDIR + "/ratio_consensus/{run}/{cell}.log"
     shell:
         """
         ./scripts/mismatch/report_consensus_mismatch.py {input} {output} &> {log}

@@ -2,9 +2,10 @@
 import sys
 import pandas as pd
 
+# single-cell count matrix
 
 def main():
-    f_filelist, f_total, f_nascent = sys.argv[1:]
+    f_filelist, out_total, out_nascent = sys.argv[1:]
     
     array1 = []
     array2 = []
@@ -30,8 +31,8 @@ def main():
     dat2.index.name = index_name
     dat2 = dat2.sort_index()
     
-    dat1.to_csv(f_total, sep="\t")
-    dat2.to_csv(f_nascent, sep="\t")
+    dat1.to_csv(out_total, sep="\t")
+    dat2.to_csv(out_nascent, sep="\t")
     
 
 if __name__ == "__main__":

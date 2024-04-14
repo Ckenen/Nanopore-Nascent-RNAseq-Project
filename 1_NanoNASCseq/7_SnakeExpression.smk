@@ -1,28 +1,28 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-indir = "results/mapping/mark_duplicate"
-outdir = "results/expression"
+INDIR = "results/mapping/mark_duplicate"
+OUTDIR = "results/expression"
 
 rule all:
     input:
-        expand(outdir + "/expressed_alleles/{run_cell}.tsv", run_cell=run_cells),
-        expand(outdir + "/collapsed/{run_cell}.gtf", run_cell=run_cells),
-        expand(outdir + "/sqanti3/{run_cell}", run_cell=run_cells),
-        # expand(outdir + "/quant_genes/min_read_1_min_tc_1/{run_cell}.tsv", run_cell=run_cells),
-        # expand(outdir + "/quant_genes/min_read_2_min_tc_1/{run_cell}.tsv", run_cell=run_cells),
-        # expand(outdir + "/quant_genes/min_read_2_min_tc_2/{run_cell}.tsv", run_cell=run_cells),
-        expand(outdir + "/isoform_category/{run_cell}.tsv", run_cell=run_cells),
-        expand(outdir + "/quant_isoforms/min_read_2_min_tc_1/{run_cell}.tsv", run_cell=run_cells),
-        expand(outdir + "/quant_isoforms/min_read_2_min_tc_2/{run_cell}.tsv", run_cell=run_cells),
+        expand(OUTDIR + "/expressed_alleles/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/collapsed/{run_cell}.gtf", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/sqanti3/{run_cell}", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/quant_genes/min_read_1_min_tc_1/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/quant_genes/min_read_2_min_tc_1/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/quant_genes/min_read_2_min_tc_2/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/isoform_category/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/quant_isoforms/min_read_2_min_tc_1/{run_cell}.tsv", run_cell=RUN_CELLS),
+        expand(OUTDIR + "/quant_isoforms/min_read_2_min_tc_2/{run_cell}.tsv", run_cell=RUN_CELLS),
 
 rule stat_expressed_alleles:
     input:
-        bam = indir + "/{run}/{cell}.bam",
+        bam = INDIR + "/{run}/{cell}.bam",
         vcf = lambda wildcards: get_snp_vcf(wildcards.cell)
     output:
-        tsv = outdir + "/expressed_alleles/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/expressed_alleles/{run}/{cell}.tsv"
     log:
-        outdir + "/expressed_alleles/{run}/{cell}.log"
+        OUTDIR + "/expressed_alleles/{run}/{cell}.log"
     shell:
         """
         ./scripts/expression/stat_expressed_alleles.py {input} > {output.tsv} 2> {log}
@@ -30,14 +30,14 @@ rule stat_expressed_alleles:
 
 rule collapse:
     input:
-        bam = indir + "/{run}/{cell}.bam"
+        bam = INDIR + "/{run}/{cell}.bam"
     output:
-        bed = outdir + "/collapsed/{run}/{cell}.bed",
-        bed_gz = outdir + "/collapsed/{run}/{cell}.bed.gz",
-        gtf = outdir + "/collapsed/{run}/{cell}.gtf",
-        gtf_gz = outdir + "/collapsed/{run}/{cell}.gtf.gz"
+        bed = OUTDIR + "/collapsed/{run}/{cell}.bed",
+        bed_gz = OUTDIR + "/collapsed/{run}/{cell}.bed.gz",
+        gtf = OUTDIR + "/collapsed/{run}/{cell}.gtf",
+        gtf_gz = OUTDIR + "/collapsed/{run}/{cell}.gtf.gz"
     log:
-        outdir + "/collapsed/{run}/{cell}.log"
+        OUTDIR + "/collapsed/{run}/{cell}.log"
     shell:
         """(
         ./scripts/expression/collapse_umi.py {input.bam} | sort -k1,1 -k2,2n -k3,3n > {output.bed}
@@ -54,9 +54,9 @@ rule sqanti3:
         gtf2 = lambda wildcards: get_annotation_gtf(wildcards.cell),
         fa = lambda wildcards: get_genome_fasta(wildcards.cell)
     output:
-        out = directory(outdir + "/sqanti3/{run}/{cell}")
+        out = directory(OUTDIR + "/sqanti3/{run}/{cell}")
     log:
-        outdir + "/sqanti3/{run}/{cell}.log"
+        OUTDIR + "/sqanti3/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -70,9 +70,9 @@ rule quant_genes:
         event_tsv = "results/mismatch/ratio_consensus/{run}/{cell}.events.tsv",
         allele_tsv = rules.stat_expressed_alleles.output.tsv
     output:
-        tsv = outdir + "/quant_genes/min_read_{size}_min_tc_{tc}/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/quant_genes/min_read_{size}_min_tc_{tc}/{run}/{cell}.tsv"
     log:
-        outdir + "/quant_genes/min_read_{size}_min_tc_{tc}/{run}/{cell}.log"
+        OUTDIR + "/quant_genes/min_read_{size}_min_tc_{tc}/{run}/{cell}.log"
     params:
         sqanti3_tsv = rules.sqanti3.output.out + "/{cell}_classification.txt"
     shell:
@@ -86,9 +86,9 @@ rule stat_isoform_category:
         gtf = lambda wildcards: get_annotation_gtf(wildcards.cell),
         bed = rules.collapse.output.bed_gz
     output:
-        tsv = outdir + "/isoform_category/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/isoform_category/{run}/{cell}.tsv"
     log:
-        outdir + "/isoform_category/{run}/{cell}.log"
+        OUTDIR + "/isoform_category/{run}/{cell}.log"
     threads:
         4
     shell:
@@ -102,9 +102,9 @@ rule quant_isoforms:
         event_tsv = "results/mismatch/ratio_consensus/{run}/{cell}.events.tsv",
         allele_tsv = rules.stat_expressed_alleles.output.tsv
     output:
-        tsv = outdir + "/quant_isoforms/min_read_{size}_min_tc_{tc}/{run}/{cell}.tsv"
+        tsv = OUTDIR + "/quant_isoforms/min_read_{size}_min_tc_{tc}/{run}/{cell}.tsv"
     log:
-        outdir + "/quant_isoforms/min_read_{size}_min_tc_{tc}/{run}/{cell}.log"
+        OUTDIR + "/quant_isoforms/min_read_{size}_min_tc_{tc}/{run}/{cell}.log"
     shell:
         """
         ./scripts/expression/quant_isoforms.py {input.stat_tsv} {input.event_tsv} \
