@@ -7,9 +7,9 @@ RUNS:
 TABLE: data/NASCseq.xlsx
 SPECIES: Human
 THREADS: 8
-RIBO_BOWTIE2_INDEX: /lustre/grp/tfclab/chenzg/species/homo_sapiens/ncbi/bt2_rrna_index
-GENOME_STAR_INDEX: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/GRCh38.canonical.v39.STAR.index
-TRANSCRIPT_BED: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.transcripts.bed
-TRANSCRIPT_BED_GZ: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.transcripts.bed.gz
-ANNOTATION_TSV: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.tsv
-SNP_BED_GZ: /lustre/grp/tfclab/chenzg/species/homo_sapiens/hg38/snp151.3.lite.bed.gz
+RIBO_BOWTIE2_INDEX: /home/chenzonggui/species/homo_sapiens/ncbi/bt2_rrna_index
+GENOME_STAR_INDEX: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/GRCh38.canonical.v39.STAR.index
+TRANSCRIPT_BED: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.transcripts.bed
+TRANSCRIPT_BED_GZ: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.transcripts.bed.gz
+ANNOTATION_TSV: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.tsv
+SNP_BED_GZ: /home/chenzonggui/species/homo_sapiens/hg38/snp151.3.lite.bed.gz

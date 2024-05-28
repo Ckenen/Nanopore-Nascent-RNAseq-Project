@@ -2,7 +2,6 @@
 include: "0_SnakeCommon.smk"
 INDIR = "results/mismatch/marked_nascent"
 OUTDIR = "results/expression"
-# RUN_CELLS = list(filter(lambda x: "_SE" not in x, RUN_CELLS))
 
 rule all:
     input:
@@ -24,13 +23,8 @@ rule calculate_fpkm:
         THREADS
     shell:
         """
-        nasctools CalculateFPKM \
-            --threads {threads} \
-            --layout {params.layout} \
-            --strand TAG \
-            --strand-tag ST \
-            --nascent \
-            --annotation {input.txt} \
+        nasctools CalculateFPKM --threads {threads} --layout {params.layout} \
+            --strand TAG --strand-tag ST --nascent --annotation {input.txt} \
             {input.bam} {input.bed} {output.txt} &> {log}
         """
 

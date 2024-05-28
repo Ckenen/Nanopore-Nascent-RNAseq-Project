@@ -5,11 +5,11 @@ OUTDIR = "results/mapping"
 
 rule all:
     input:
-        OUTDIR + "/merged/human_fly.fa",
-        OUTDIR + "/merged/human_fly.gtf",
-        OUTDIR + "/star/index",
-        expand(OUTDIR + "/star/mapped/{sample}", sample=SAMPLES),
-        expand(OUTDIR + "/filtered/{sample}.{species}.bam", sample=SAMPLES, species=SPECIES),
+        # OUTDIR + "/merged/human_fly.fa",
+        # OUTDIR + "/merged/human_fly.gtf",
+        # OUTDIR + "/star/index",
+        # expand(OUTDIR + "/star/mapped/{sample}", sample=SAMPLES),
+        # expand(OUTDIR + "/filtered/{sample}.{species}.bam", sample=SAMPLES, species=SPECIES),
         expand(OUTDIR + "/filtered/{sample}.{species}.flagstat", sample=SAMPLES, species=SPECIES),
         expand(OUTDIR + "/rmdup/{sample}.{species}.bam", sample=SAMPLES, species=SPECIES),
         expand(OUTDIR + "/rmdup/{sample}.{species}.flagstat", sample=SAMPLES, species=SPECIES),

@@ -21,10 +21,7 @@ rule get_events:
         THREADS
     shell:
         """
-        nasctools GetEvent \
-            --threads {threads} \
-            --snp {input.bed} \
-            {input.bam} {output.bam} &> {log}
+        nasctools GetEvent -t {threads} -s {input.bed} {input.bam} {output.bam} &> {log}
         samtools index -@ {threads} {output.bam}
         """
 
@@ -39,10 +36,7 @@ rule mark_nascent:
         layout = lambda wildcards: get_layout(wildcards.cell)
     shell:
         """
-        nasctools MarkNascent \
-            --platform NGS \
-            --layout {params.layout} \
-            {input.bam} {output.bam} &> {log}
+        nasctools MarkNascent -p NGS -l {params.layout} {input.bam} {output.bam} &> {log}
         samtools index {output.bam}
         """
 
@@ -57,9 +51,6 @@ rule report_ratio:
         THREADS
     shell:
         """
-        nasctools ReportMismatch \
-            --threads {threads} \
-            --strand TAG \
-            --strand-tag ST \
+        nasctools ReportMismatch -t {threads} -s TAG --strand-tag ST \
             {input.bam} {output.tsv} &> {log}
         """

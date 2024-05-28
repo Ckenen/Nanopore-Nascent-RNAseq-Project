@@ -9,7 +9,7 @@ OUTDIR = "results/prepare"
 
 rule all:
     input:
-        expand(OUTDIR + "/cutadapt/{run_cell}.fastq.gz", run_cell=RUN_CELLS),
+        # expand(OUTDIR + "/cutadapt/{run_cell}.fastq.gz", run_cell=RUN_CELLS),
         expand(OUTDIR + "/bowtie2/{run_cell}.bam", run_cell=RUN_CELLS),
 
 rule cutadapt:

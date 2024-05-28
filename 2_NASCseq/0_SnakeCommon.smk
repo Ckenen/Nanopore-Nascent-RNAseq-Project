@@ -7,7 +7,7 @@ DAT = pd.read_excel(config["TABLE"])
 DAT.index = DAT["Cell"]
 DAT = DAT[DAT["Species"] == config["SPECIES"]]
 DAT["RunCell"] = ["%s/%s" % (run, cell) for run, cell in DAT[["Run", "Cell"]].values]
-DAT1 = DAT[[x in RUNS for x in DAT["Run"]]]
+DAT1 = DAT[DAT["Run"].isin(RUNS)]
 RUN_CELLS = DAT1["RunCell"].values
 RUN_CELLS_PE = DAT1[DAT1["Layout"] == "PE"]["RunCell"].values
 RUN_CELLS_SE = DAT1[DAT1["Layout"] == "SE"]["RunCell"].values

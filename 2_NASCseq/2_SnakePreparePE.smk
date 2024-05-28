@@ -6,8 +6,8 @@ OUTDIR = "results/prepare"
 
 rule all:
     input:
-        expand(OUTDIR + "/cutadapt/{run_cell}_{r}.fastq.gz", run_cell=RUN_CELLS, r=RS),
-        expand(OUTDIR + "/bowtie2/{run_cell}.bam", run_cell=RUN_CELLS),
+        # expand(OUTDIR + "/cutadapt/{run_cell}_{r}.fastq.gz", run_cell=RUN_CELLS, r=RS),
+        expand(OUTDIR + "/bowtie2/{run_cell}.bam", run_cell=RUN_CELLS[:1]),
 
 def get_input_fastqs(run):
     if run == "GSE128273_NASCseq_K562":

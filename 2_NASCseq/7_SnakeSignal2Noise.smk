@@ -16,6 +16,5 @@ rule estimate_pc:
         txt = OUTDIR + "/pc/{run}/{cell}.tsv"
     shell:
         """
-        ./scripts/estimate_pc.py -m short -b {input.bam} \
-            {input.tsv1} {input.tsv2} > {output}
+        ./scripts/estimate_pc.py -m short -b {input.bam} {input.tsv1} {input.tsv2} > {output}
         """

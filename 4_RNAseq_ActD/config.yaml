@@ -5,12 +5,6 @@ SAMPLES:
  - 20221128_K562_Actd_3h_rep2
  - 20221128_K562_Actd_6h_rep1
  - 20221128_K562_Actd_6h_rep2
- - 20221205_K562_Actd_0h_rep1 # identical cell number (deprecated)
- - 20221205_K562_Actd_0h_rep2
- - 20221205_K562_Actd_3h_rep1
- - 20221205_K562_Actd_3h_rep2
- - 20221205_K562_Actd_6h_rep1
- - 20221205_K562_Actd_6h_rep2
 
 SPECIES:
  - human

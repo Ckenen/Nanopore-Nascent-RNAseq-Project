@@ -6,24 +6,9 @@ OUTDIR = "results/prepare"
 
 rule all:
     input:
-        expand(OUTDIR + "/fastqc/{sample}_R{r}_fastqc.html", sample=SAMPLES, r=RS),
-        expand(OUTDIR + "/cutadapt/{sample}_R{r}.fastq.gz", sample=SAMPLES, r=RS),
+        # expand(OUTDIR + "/cutadapt/{sample}_R{r}.fastq.gz", sample=SAMPLES, r=RS),
         expand(OUTDIR + "/bowtie2/{sample}.bam", sample=SAMPLES, r=RS)
 
-rule fastqc:
-    input:
-        fq = INDIR + "/{name}.fastq.gz"
-    output:
-        html = OUTDIR + "/fastqc/{name}_fastqc.html"
-    log:
-        OUTDIR + "/fastqc/{name}_fastqc.log"
-    conda:
-        "fastqc"
-    shell:
-        """
-        fastqc -o `dirname {output.html}` {input.fq} &> {log}
-        """
-    
 rule cutadapt:
     input:
         fq1 = INDIR + "/{sample}_R1.fastq.gz",

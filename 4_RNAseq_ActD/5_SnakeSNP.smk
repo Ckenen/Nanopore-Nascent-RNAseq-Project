@@ -1,9 +1,5 @@
 #!/usr/bin/env runsnakemake
 include: "0_SnakeCommon.smk"
-SAMPLES = [
-    "20221128_K562_Actd_0h_rep1", "20221128_K562_Actd_0h_rep2",
-    "20221128_K562_Actd_3h_rep1", "20221128_K562_Actd_3h_rep2",
-    "20221128_K562_Actd_6h_rep1", "20221128_K562_Actd_6h_rep2"]
 INDIR = "results/mapping/rmdup"
 OUTDIR = "results/snps"
 
