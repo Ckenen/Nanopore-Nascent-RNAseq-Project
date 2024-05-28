@@ -3,14 +3,14 @@ import sys
 from collections import defaultdict
 import multiprocessing as mp
 import numpy as np
-from pyBioInfo.IO.File import BamFileRandom
+from pyBioInfo.IO.File import BamFile
 from pyBioInfo.Utils import BundleBuilder, SegmentTools
 
 
 def call_het_snps(bamfile, chrom):
     # lines = []  
     snps = []  
-    with BamFileRandom(bamfile) as f:
+    with BamFile(bamfile, random=True) as f:
         for bundle in BundleBuilder(f.fetch(chrom), keep=True):
             coverages = np.zeros(bundle.end_max - bundle.start_min, dtype=int)
             for align in bundle.data:
@@ -52,7 +52,7 @@ def main():
     bamfile, sample, threads, outfile = sys.argv[1:]
     threads = int(threads)
     
-    with BamFileRandom(bamfile) as f:
+    with BamFile(bamfile, random=True) as f:
         references = f.references
 
     results = []
@@ -86,7 +86,7 @@ def main():
                 if gt1 > gt2:
                     gt1, gt2 = gt2, gt1
                 gt = "%d|%d" % (gt1, gt2)
-                line = "\t".join(map(str, [chrom, pos + 1, ".", ref, alts, ".", "PASS", ".", "GT:PS", gt + ":0"]))
+                line = "\t".join(map(str, [chrom, pos + 1, ".", ref, alts, ".", "PASS", ".", "GT", gt]))
                 fw.write(line + "\n")
                     
     

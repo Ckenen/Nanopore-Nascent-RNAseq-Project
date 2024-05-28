@@ -1,7 +1,3 @@
-# RNA-seq of K562 with ActD treatment
+# RNA-seq of K562 under ActD treatment
 
-# Requirements
-
-    bowtie2
-    STAR
-    samtools
+The cDNA libraries for RNA-seq were stranded (RF).

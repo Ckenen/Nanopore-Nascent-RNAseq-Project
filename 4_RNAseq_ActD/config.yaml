@@ -18,18 +18,16 @@ SPECIES:
 
 THREADS: 12
 
-RIBO_FASTA: /lustre/grp/tfclab/chenzg/species/homo_sapiens/ncbi/ribosomal_rna.fasta
+RIBO_BOWTIE2_INDEX: /home/chenzonggui/species/homo_sapiens/ncbi/bt2_rrna_index
 
-HUMAN_FASTA: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/GRCh38.primary_assembly.genome.fa
-HUMAN_GTF: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.sorted.gtf
-HUMAN_GENE_BED: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.genes.bed
-HUMAN_TRANSCRIPT_BED: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.transcripts.bed.gz
-HUMAN_ANNOTATION_TSV: /lustre/grp/tfclab/chenzg/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.tsv
+HUMAN_FASTA: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/GRCh38.primary_assembly.genome.fa
+HUMAN_GTF: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.sorted.gtf
+HUMAN_TRANSCRIPT_BED: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.transcripts.bed.gz
+HUMAN_ANNOTATION_TSV: /home/chenzonggui/species/homo_sapiens/GRCh38.p13/gencode.v39.annotation.tsv
 HUMAN_SEQNAME_PATTERN: ^chr([0-9]+|[XY])$
 
-FLY_FASTA: /lustre/grp/tfclab/chenzg/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.dna_sm.toplevel.fa
-FLY_GTF: /lustre/grp/tfclab/chenzg/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.108.gtf
-FLY_GENE_BED: /lustre/grp/tfclab/chenzg/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.108.transcripts.bed
-FLY_TRANSCRIPT_BED: /lustre/grp/tfclab/chenzg/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.108.transcripts.bed.gz
-FLY_ANNOTATION_TSV: /lustre/grp/tfclab/chenzg/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.108.annotation.tsv
+FLY_FASTA: /home/chenzonggui/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.dna_sm.toplevel.fa
+FLY_GTF: /home/chenzonggui/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.108.gtf
+FLY_TRANSCRIPT_BED: /home/chenzonggui/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.108.transcripts.bed.gz
+FLY_ANNOTATION_TSV: /home/chenzonggui/species/drosophila_melanogaster/Drosophila_melanogaster.BDGP6.32.108.annotation.tsv
 FLY_SEQNAME_PATTERN: ^(2L|2R|3L|3R|[4XY])$

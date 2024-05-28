@@ -11,7 +11,6 @@ rule all:
         expand(OUTDIR + "/star/mapped/{sample}", sample=SAMPLES),
         expand(OUTDIR + "/filtered/{sample}.{species}.bam", sample=SAMPLES, species=SPECIES),
         expand(OUTDIR + "/filtered/{sample}.{species}.flagstat", sample=SAMPLES, species=SPECIES),
-        expand(OUTDIR + "/infer_experiment/{sample}.{species}.txt", sample=SAMPLES, species=SPECIES),
         expand(OUTDIR + "/rmdup/{sample}.{species}.bam", sample=SAMPLES, species=SPECIES),
         expand(OUTDIR + "/rmdup/{sample}.{species}.flagstat", sample=SAMPLES, species=SPECIES),
 
@@ -55,7 +54,7 @@ rule star_index:
         fa = rules.merge_fasta.output.fa,
         gtf = rules.merge_gtf.output.gtf
     output:
-        idx = directory(OUTDIR + "/star/index")
+        directory(OUTDIR + "/star/index")
     log:
         OUTDIR + "/star/index.log"
     conda:
@@ -64,10 +63,10 @@ rule star_index:
         THREADS
     shell:
         """(
-        mkdir -p {output.idx}
+        mkdir -p {output}
         STAR --runMode genomeGenerate \
             --runThreadN {threads} \
-            --genomeDir {output.idx} \
+            --genomeDir {output} \
             --genomeFastaFiles {input.fa} \
             --sjdbGTFfile {input.gtf} ) &> {log}
         """
@@ -76,9 +75,9 @@ rule star_mapping:
     input:
         fq1 = INDIR + "/{sample}.1.fq.gz",
         fq2 = INDIR + "/{sample}.2.fq.gz",
-        index = rules.star_index.output.idx
+        index = rules.star_index.output
     output:
-        out = directory(OUTDIR + "/star/mapped/{sample}")
+        directory(OUTDIR + "/star/mapped/{sample}")
     log:
         OUTDIR + "/star/mapped/{sample}.log"
     conda:
@@ -100,7 +99,7 @@ rule star_mapping:
 
 rule filter_and_split: # filter and split
     input:
-        rules.star_mapping.output.out
+        rules.star_mapping.output
     output:
         bam = OUTDIR + "/filtered/{sample}.{species}.bam"
     log:
@@ -113,53 +112,24 @@ rule filter_and_split: # filter and split
         4
     shell:
         """(
-        samtools view -@ {threads} \
-            -q 30 \
-            -d "NH:1" \
-            -f 2 \
-            -F 2308 \
-            --expr 'rname =~ "{params.pattern}"' \
-            -o {output.bam} \
+        samtools view -@ {threads} -q 30 -d "NH:1" -f 2 -F 2308 \
+            --expr 'rname =~ "{params.pattern}"' -o {output.bam} \
             {input}/{wildcards.sample}.Aligned.sortedByCoord.out.bam
         samtools index -@ {threads} {output.bam} ) &> {log}
-        """
-
-rule infer_experiment:
-    input:
-        bam = rules.filter_and_split.output.bam,
-        bed = lambda wildcards: get_gene_bed(wildcards.species)
-    output:
-        txt = OUTDIR + "/infer_experiment/{sample}.{species}.txt"
-    log:
-        OUTDIR + "/infer_experiment/{sample}.{species}.log"
-    conda:
-        "rseqc"
-    shell:
-        """
-        infer_experiment.py \
-            -s 2000000 \
-            -i {input.bam} \
-            -r {input.bed} > {output.txt} 2> {log}
         """
 
 rule rmdup:
     input:
         bam = rules.filter_and_split.output.bam
     output:
-        bam = OUTDIR + "/rmdup/{sample}.{species}.bam",
-        txt = OUTDIR + "/rmdup/{sample}.{species}_metrics.txt"
+        bam = OUTDIR + "/rmdup/{sample}.{species}.bam"
     log:
         OUTDIR + "/rmdup/{sample}.{species}.log"
-    conda:
-        "picard"
+    threads:
+        4
     shell:
-        """(
-        picard MarkDuplicates \
-            --REMOVE_DUPLICATES true \
-            -I {input.bam} \
-            -O {output.bam} \
-            -M {output.txt} 
-        samtools index {output.bam} ) &> {log}
+        """
+        sambamba markdup -r -t {threads} {input.bam} {output.bam} &> {log}
         """
 
 # Common rules

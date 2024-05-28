@@ -13,9 +13,6 @@ def get_fasta(species):
 def get_gtf(species):
     return config["%s_GTF" % species.upper()]
 
-def get_gene_bed(species):
-    return config["%s_GENE_BED" % species.upper()]
-
 def get_transcript_bed(species):
     return config["%s_TRANSCRIPT_BED" % species.upper()]
 

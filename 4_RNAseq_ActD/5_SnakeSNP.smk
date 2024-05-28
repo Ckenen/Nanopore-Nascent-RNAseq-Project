@@ -9,11 +9,11 @@ OUTDIR = "results/snps"
 
 rule all:
     input:
-        expand(OUTDIR + "/vcfs/{sample}.vcf.gz", sample=SAMPLES[:1]),
-        expand(OUTDIR + "/haplotag/{sample}.bam", sample=SAMPLES),
-        expand(OUTDIR + "/counts/{sample}.tsv", sample=SAMPLES),
-        OUTDIR + "/merge_strategy/all_samples_merged.bam",
-        OUTDIR + "/merge_strategy/all_samples_merged.vcf.gz",
+        # expand(OUTDIR + "/vcfs/{sample}.vcf.gz", sample=SAMPLES[:1]),
+        # expand(OUTDIR + "/haplotag/{sample}.bam", sample=SAMPLES),
+        # expand(OUTDIR + "/counts/{sample}.tsv", sample=SAMPLES),
+        # OUTDIR + "/merge_strategy/all_samples_merged.bam",
+        # OUTDIR + "/merge_strategy/all_samples_merged.vcf.gz",
 
 rule call_het_snps:
     input:
