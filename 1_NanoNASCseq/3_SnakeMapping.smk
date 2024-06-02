@@ -7,9 +7,9 @@ rule all:
     input:
         expand(OUTDIR + "/minimap2/{run_cell}.bam", run_cell=RUN_CELLS),
         expand(OUTDIR + "/minimap2/{run_cell}.flagstat", run_cell=RUN_CELLS),
-        expand(OUTDIR + "/filtered/{run_cell}.bam", run_cell=RUN_CELLS),
-        expand(OUTDIR + "/extract_umi/{run_cell}.bam", run_cell=RUN_CELLS),
-        expand(OUTDIR + "/stat_clip/{run_cell}.bam", run_cell=RUN_CELLS),
+        # expand(OUTDIR + "/filtered/{run_cell}.bam", run_cell=RUN_CELLS),
+        # expand(OUTDIR + "/extract_umi/{run_cell}.bam", run_cell=RUN_CELLS),
+        # expand(OUTDIR + "/stat_clip/{run_cell}.bam", run_cell=RUN_CELLS),
         expand(OUTDIR + "/mark_duplicate/{run_cell}.bam", run_cell=RUN_CELLS),
         expand(OUTDIR + "/mark_duplicate/{run_cell}.flagstat", run_cell=RUN_CELLS),
         expand(OUTDIR + "/remove_duplicate/{run_cell}.bam", run_cell=RUN_CELLS),
@@ -32,11 +32,8 @@ rule minimap2:
         THREADS
     shell:
         """(
-        minimap2 -ax splice -u f \
-            -Y --MD \
-            -R '{params.rg}' \
-            --junc-bed {input.bed} \
-            -t {threads} {input.mmi} {input.fq} \
+        minimap2 -ax splice -u f -Y --MD -R '{params.rg}' -t {threads} \
+            --junc-bed {input.bed} {input.mmi} {input.fq} \
             | samtools view -@ {threads} -u - \
             | samtools sort -@ {threads} -T {output.bam} -o {output.bam} - 
         samtools index -@ {threads} {output.bam} ) &> {log}

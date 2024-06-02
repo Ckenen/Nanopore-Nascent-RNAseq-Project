@@ -8,7 +8,7 @@ rule all:
         expand(OUTDIR + "/barcodes/{run}.fa", run=RUNS),
         expand(OUTDIR + "/fbilr/{run}.tsv.gz", run=RUNS),
         expand(OUTDIR + "/fbilr/{run}.stats.tsv.gz", run=RUNS),
-        expand(OUTDIR + "/splitted/{run}", run=RUNS),
+        # expand(OUTDIR + "/splitted/{run}", run=RUNS),
         expand(OUTDIR + "/trimmed/{run_cell}", run_cell=RUN_CELLS),
         OUTDIR + "/summary_of_trimming.tsv",
 

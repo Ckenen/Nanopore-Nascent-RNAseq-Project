@@ -2,7 +2,6 @@
 include: "0_SnakeCommon.smk"
 INDIR = "results/mapping/mark_duplicate"
 OUTDIR = "results/mismatch"
-# RUN_CELLS = RUN_CELLS[:2]
 
 rule all:
     input:
